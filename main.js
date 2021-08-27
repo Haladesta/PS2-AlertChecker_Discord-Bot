@@ -1,4 +1,3 @@
-require('dotenv').config({ path: '.env' });
 const got = require('got');
 const alertTypes = require('./alerts.json');
 

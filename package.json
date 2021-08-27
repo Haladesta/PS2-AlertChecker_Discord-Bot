@@ -1,5 +1,5 @@
 {
-  "name": "bois-alert-checker",
+  "name": "ps2-alertchecker_discord-bot",
   "version": "1.0.0",
   "description": "",
   "main": "main.js",
@@ -8,17 +8,16 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Haladesta/bois-alert-checker.git"
+    "url": "git+https://github.com/Haladesta/PS2-AlertChecker_Discord-Bot.git"
   },
   "author": "Haladesta",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/Haladesta/bois-alert-checker/issues"
+    "url": "https://github.com/Haladesta/PS2-AlertChecker_Discord-Bot/issues"
   },
-  "homepage": "https://github.com/Haladesta/bois-alert-checker#readme",
+  "homepage": "https://github.com/Haladesta/PS2-AlertChecker_Discord-Bot#readme",
   "dependencies": {
     "discord.js": "^13.0.1",
-    "dotenv": "^10.0.0",
     "got": "^11.8.2"
   }
 }
