@@ -1,4 +1,4 @@
-require('dotenv').config({ path: 'variables.env' });
+require('dotenv').config({ path: '.env' });
 const got = require('got');
 const alertTypes = require('./alerts.json');
 
@@ -10,9 +10,9 @@ const bot = new Client({ intents: myIntents });
 const TOKEN = process.env.TOKEN;
 
 const statuses = {
-    'checking': { status: 'online', activities: [{ name: 'Checking... 👀' }] },
-    'idle': { status: 'idle', activities: [{ name: 'Sleeping 💤' }] },
-    'error': { status: 'dnd', activities: [{ name: 'Error: API unavailable' }] }
+    CHECKING: { status: 'online', activities: [{ name: 'Checking... 👀' }] },
+    IDLE: { status: 'idle', activities: [{ name: 'Sleeping 💤' }] },
+    ERROR: { status: 'dnd', activities: [{ name: 'Error: API unavailable' }] }
 }
 
 const popLevels = {
@@ -49,9 +49,9 @@ const alertInfo = async function() {
         return;
     }
 
-    let response = await got(uri, {retry: 0}).json().catch(err => {
+    let response = await got(uri, { retry: 0 }).json().catch(err => {
         console.error(`PS2-Alerts API unreachable. Error:\n${err}`);
-        bot.user.setPresence(statuses['error']);
+        bot.user.setPresence(statuses.ERROR);
         stopChecking(true);
         setTimeout(checkTime, 900000); // check again in 15min
     });
@@ -134,7 +134,8 @@ bot.on('ready', () => {
     bot.channels.fetch(process.env.CHANNEL)
         .then(channel => channel.send("Ready"));
     */
-    
+
+    bot.user.setPresence(statuses.IDLE);
     bot.channels.fetch(process.env.CHANNEL)
         .then(res => {
             CHANNEL = res;
@@ -151,7 +152,7 @@ function startChecking(startOnly) {
     }
     if (startOnly !== true) {
         console.log("# Start tracking alerts. #");
-        bot.user.setPresence(statuses['checking']);
+        bot.user.setPresence(statuses.CHECKING);
     }
     alertInfo();
     interval = setInterval(alertInfo, 60000); // beginn checking alerts in 1min intervals
@@ -163,7 +164,7 @@ function stopChecking(stopOnly) {
     }
     if (stopOnly !== true) {
         console.log("# Stop tracking alerts.  #");
-        bot.user.setPresence(statuses['idle']);
+        bot.user.setPresence(statuses.IDLE);
     }
     clearInterval(interval); // stop checking alerts
     interval = null;
