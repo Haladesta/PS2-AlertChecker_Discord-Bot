@@ -32,8 +32,8 @@ const endHours = 21; // (to UTC)
 const endMins = 30;
 
 bot.on('ready', async() => {
-    
-    
+
+
     console.info(`Logged in as ${bot.user.tag}!`);
     bot.user.setPresence(STATUSES.IDLE);
     CHANNEL = await bot.channels.fetch(process.env.CHANNEL);
@@ -179,6 +179,13 @@ function checkTime() {
 }
 
 bot.login(TOKEN);
+
+if (process.env.PORT != null) {
+    http.createServer(function(request, response) {
+        response.writeHead(200);
+        response.end();
+    }).listen(process.env.PORT);
+}
 
 function indexOfMax(arr) {
     if (arr.length === 0) {
