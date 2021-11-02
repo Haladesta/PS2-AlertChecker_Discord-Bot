@@ -124,9 +124,9 @@ const postAlert = async function(alert) {
         .addField("Timeframe", `<t:${alert.timestamp}:t> — <t:${parseInt(alert.timestamp) + 5400}:t>`)
         //.addField("Activity Level", popLevel, true)
         .addField('Territory Control', `\
-                                \n<:VS:793952227558424586> **VS**: ${scores[0]}\
-                                \n<:NC:793952194863956018> **NC**: ${scores[1]}\
-                                \n<:TR:793952210752241665> **TR**: ${scores[2]}`)
+                                \n<:VS:793952227558424586> **VS**: ${scores[0]}%\
+                                \n<:NC:793952194863956018> **NC**: ${scores[1]}%\
+                                \n<:TR:793952210752241665> **TR**: ${scores[2]}%`)
         .setTimestamp();
 
     switch (CONTINENTS[alert.zone_id]) {
