@@ -1,5 +1,6 @@
 'use strict';
 const got = require('got');
+var http = require('http');
 const alertTypes = require('./alerts.json');
 const WebSocket = require('ws');
 
