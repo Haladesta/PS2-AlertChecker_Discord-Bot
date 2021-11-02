@@ -32,6 +32,8 @@ const endHours = 21; // (to UTC)
 const endMins = 30;
 
 bot.on('ready', async() => {
+    
+    
     console.info(`Logged in as ${bot.user.tag}!`);
     bot.user.setPresence(STATUSES.IDLE);
     CHANNEL = await bot.channels.fetch(process.env.CHANNEL);
@@ -166,12 +168,12 @@ function checkTime() {
         }
 
         let difToStart = ((startHours * 60 + startMins) * 60000) - ((curHours * 3600 + curMins * 60 + curSecs) * 1000); // difference now to start time
-        if (difToStart < 0 || difToStart > 1800000) {
-            console.log("Wait 30mins");
-            setTimeout(checkTime, 1800000);
+        if (difToStart < 0 || difToStart > 432000000) {
+            console.log("Wait 2h");
+            setTimeout(checkTime, 432000000);
         } else {
             console.log(`Wait ${Math.floor(difToStart / 60000)}mins`);
-            setTimeout(checkTime, difToStart + 10000); // (dif < 30min) -> wait dif + small margin of error
+            setTimeout(checkTime, difToStart + 10000); // (dif < 2h) -> wait dif + small margin of error
         }
     }
 }
