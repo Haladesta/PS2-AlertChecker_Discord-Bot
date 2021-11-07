@@ -1,8 +1,18 @@
 'use strict';
+require('dotenv').config();
 const got = require('got');
-var http = require('http');
 const alertTypes = require('./alerts.json');
 const WebSocket = require('ws');
+
+console.log("-------------------------------------");
+const PORT = process.env.PORT || 5000;
+const http = require('http');
+http.createServer(function(request, response) {
+    response.writeHead(200);
+    response.end();
+}).listen(PORT);
+console.log(`Listening on Port ${PORT}`);
+console.log("-------------------------------------");
 
 const { Client, Intents, MessageEmbed } = require('discord.js');
 const myIntents = new Intents();
@@ -33,8 +43,6 @@ const endHours = 21; // (to UTC)
 const endMins = 30;
 
 bot.on('ready', async() => {
-
-
     console.info(`Logged in as ${bot.user.tag}!`);
     bot.user.setPresence(STATUSES.IDLE);
     CHANNEL = await bot.channels.fetch(process.env.CHANNEL);
@@ -154,7 +162,7 @@ function checkTime() {
     let curMins = curDate.getUTCMinutes();
     let curSecs = curDate.getUTCSeconds();
 
-    console.log(`Checking at: ${curHours}:${curMins} vs ${startHours}:${startMins}`);
+    console.log(`Checking at: ${leadZero(curHours)}:${leadZero(curMins)} vs ${leadZero(startHours)}:${leadZero(startMins)}`);
     if ((curHours > startHours || (curHours === startHours && curMins >= startMins)) && // start checking ?
         (curHours < endHours || (curHours === endHours && curMins < endMins))) { // now >= start && now < end
 
@@ -169,9 +177,9 @@ function checkTime() {
         }
 
         let difToStart = ((startHours * 60 + startMins) * 60000) - ((curHours * 3600 + curMins * 60 + curSecs) * 1000); // difference now to start time
-        if (difToStart < 0 || difToStart > 432000000) {
+        if (difToStart < 0 || difToStart > 7200000) {
             console.log("Wait 2h");
-            setTimeout(checkTime, 432000000);
+            setTimeout(checkTime, 7200000);
         } else {
             console.log(`Wait ${Math.floor(difToStart / 60000)}mins`);
             setTimeout(checkTime, difToStart + 10000); // (dif < 2h) -> wait dif + small margin of error
@@ -181,13 +189,7 @@ function checkTime() {
 
 bot.login(TOKEN);
 
-if (process.env.PORT != null) {
-    http.createServer(function(request, response) {
-        response.writeHead(200);
-        response.end();
-    }).listen(process.env.PORT);
-}
-
+// HELPERS
 function indexOfMax(arr) {
     if (arr.length === 0) {
         return -1;
@@ -204,4 +206,11 @@ function indexOfMax(arr) {
     }
 
     return maxIndex;
+}
+
+function leadZero(num) {
+    if (num < 10)
+        return `0${num}`;
+    else
+        return `${num}`;
 }
