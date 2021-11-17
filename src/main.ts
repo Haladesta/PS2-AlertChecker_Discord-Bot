@@ -178,8 +178,7 @@ function jsonToEmbed(alert: AlertData)
 {
 	let alertType = alertTypes[alert.metagame_event_id]; // read from json
 	let alertEmbed = new MessageEmbed()
-        .setThumbnail('https://c.tenor.com/Ja2IaLhBcFoAAAAC/the-office-michael-scott.gif')
-		//.setThumbnail('https://emoji.gg/assets/emoji/2891_RedAlert.gif')
+		.setThumbnail('https://emoji.gg/assets/emoji/2891_RedAlert.gif')
 		.setTitle(alertType.name)
 		//.addField("Details:", `[${alertType.description}](https://ps2alerts.com/alert/${alert.world_id}-${alert.instance_id})`)
 		.addField("Timeframe", `<t:${alert.timestamp}:t> — <t:${parseInt(alert.timestamp) + (alert.metagame_event_state_name == "ended" ? -5400 : 5400)}:t>`)
