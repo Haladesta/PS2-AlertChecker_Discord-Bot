@@ -141,9 +141,13 @@ const connect = () =>
 					let msg = curAlerts.get(jsonData.payload.instance_id);
 					if (msg != null)
 					{
-						msg.edit({ embeds: [jsonToEmbed(jsonData.payload)] });
-						console.log(`Alert ended (id = ${jsonData.payload.instance_id}): \n'${event.data}'`);
-						curAlerts.delete(jsonData.payload.instance_id);
+						try
+						{
+							msg.edit({ embeds: [jsonToEmbed(jsonData.payload)] });
+							console.log(`Alert ended (id = ${jsonData.payload.instance_id}): \n'${event.data}'`);
+							curAlerts.delete(jsonData.payload.instance_id);
+						} 
+						catch (error) { /* If message was deleted -> do nothing */	}
 					}
 					else
 					{
