@@ -1,25 +1,32 @@
 {
-  "name": "ps2-alertchecker_discord-bot",
-  "version": "1.0.0",
-  "description": "",
-  "main": "main.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/Haladesta/PS2-AlertChecker_Discord-Bot.git"
-  },
-  "author": "Haladesta",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/Haladesta/PS2-AlertChecker_Discord-Bot/issues"
-  },
-  "homepage": "https://github.com/Haladesta/PS2-AlertChecker_Discord-Bot#readme",
-  "dependencies": {
-    "discord.js": "^13.0.1",
-    "dotenv": "^10.0.0",
-    "got": "^11.8.2",
-    "ws": "^8.2.2"
-  }
+	"name": "ps2-alertchecker_discord-bot",
+	"version": "1.0.0",
+	"description": "",
+	"main": "dist/main.js",
+	"scripts": {
+		"start": "ts-node ./src/main.ts",
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/Haladesta/PS2-AlertChecker_Discord-Bot.git"
+	},
+	"author": "Haladesta",
+	"license": "ISC",
+	"bugs": {
+		"url": "https://github.com/Haladesta/PS2-AlertChecker_Discord-Bot/issues"
+	},
+	"homepage": "https://github.com/Haladesta/PS2-AlertChecker_Discord-Bot#readme",
+	"dependencies": {
+		"discord.js": "^13.0.1",
+		"dotenv": "^10.0.0",
+		"got": "^11.8.2",
+		"ws": "^8.2.2"
+	},
+	"devDependencies": {
+		"@types/dotenv": "^8.2.0",
+		"@types/node": "^16.11.7",
+		"ts-node": "^10.4.0",
+		"typescript": "^4.4.4"
+	}
 }
