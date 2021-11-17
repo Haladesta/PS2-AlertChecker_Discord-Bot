@@ -68,7 +68,7 @@ interface PS2EventMessage
 
 // default 18:00 - 21:30
 const startHours: number = 17; // 17 (to UTC)
-const startMins: number = 0;
+const startMins: number = 30;
 const endHours: number = 20; // 20 (to UTC)
 const endMins: number = 30;
 
@@ -105,7 +105,7 @@ const connect = () =>
 		var subscribeObj = {
 			"service": "event",
 			"action": "subscribe",
-			"worlds": ["13", "10", "40", "17", "1"], // 13 = Cobalt, others: "10", "40", "17", "1"
+			"worlds": ["13"], // 13 = Cobalt, others: "10", "40", "17", "1"
 			"eventNames": ["MetagameEvent"]
 		};
 
