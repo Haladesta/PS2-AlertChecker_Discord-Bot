@@ -67,9 +67,9 @@ interface PS2EventMessage
 }
 
 // default 18:00 - 21:30
-const startHours: number = 1; // 17 (to UTC)
+const startHours: number = 17; // 17 (to UTC)
 const startMins: number = 0;
-const endHours: number = 23; // 20 (to UTC)
+const endHours: number = 20; // 20 (to UTC)
 const endMins: number = 30;
 
 const curAlerts: Map<String, Message<boolean>> = new Map();
