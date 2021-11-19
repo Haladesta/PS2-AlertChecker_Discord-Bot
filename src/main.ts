@@ -4,7 +4,7 @@ require('dotenv').config();
 import alertTypes from './alerts.json';
 import WebSocket from 'ws';
 
-console.log("-------------------------------------");
+log("-------------------------------------");
 const PORT: string = process.env.PORT || "5000";
 import http from 'http';
 http.createServer((request: any, response: any) =>
@@ -12,8 +12,8 @@ http.createServer((request: any, response: any) =>
 	response.writeHead(200);
 	response.end();
 }).listen(PORT);
-console.log(`Listening on Port ${PORT}`);
-console.log("-------------------------------------");
+log(`Listening on Port ${PORT}`);
+log("-------------------------------------");
 
 import { Channel, Client, Intents, Message, MessageEmbed, PresenceData, TextChannel } from 'discord.js';
 const myIntents: Intents = new Intents();
@@ -76,7 +76,7 @@ const curAlerts: Map<String, Message<boolean>> = new Map();
 
 bot.on('ready', async () =>
 {
-	console.info(`Logged in as ${bot.user?.tag}!`);
+	log(`Logged in as ${bot.user?.tag}!`);
 	bot.user?.setPresence(STATUSES.IDLE);
 	let channelid: string = process.env.CHANNEL || "";
 	CHANNEL = await bot.channels.fetch(channelid) as TextChannel;
@@ -100,7 +100,7 @@ const connect = () =>
 
 	ps2Socket.onopen = (event) =>
 	{
-		console.log('Client Connected');
+		log('Client Connected');
 
 		var subscribeObj = {
 			"service": "event",
@@ -114,12 +114,12 @@ const connect = () =>
 
 	ps2Socket.onclose = event =>
 	{
-		console.log('Connection Closed');
+		log('Connection Closed');
 	};
 
 	ps2Socket.onerror = event =>
 	{
-		console.log("Connection Error: " + event);
+		log("Connection Error: " + event);
 	};
 
 	ps2Socket.onmessage = async (event) =>
@@ -133,7 +133,7 @@ const connect = () =>
 				{
 					var msg = await CHANNEL.send({ embeds: [jsonToEmbed(jsonData.payload)] });
 					curAlerts.set(jsonData.payload.instance_id, msg);
-					console.log(`New Alert (id = ${jsonData.payload.instance_id}): \n'${event.data}'`);
+					log(`New Alert (id = ${jsonData.payload.instance_id}): \n'${event.data}'`);
 				}
 				else if (jsonData.payload.metagame_event_state_name == "ended")
 				{
@@ -143,14 +143,14 @@ const connect = () =>
 						try
 						{
 							msg.edit({ embeds: [jsonToEmbed(jsonData.payload)] });
-							console.log(`Alert ended (id = ${jsonData.payload.instance_id}): \n'${event.data}'`);
+							log(`Alert ended (id = ${jsonData.payload.instance_id}): \n'${event.data}'`);
 							curAlerts.delete(jsonData.payload.instance_id);
 						}
 						catch (error) { /* If message was deleted -> do nothing */ }
 					}
 					else
 					{
-						console.log(`Ignored: Alert ended (id = ${jsonData.payload.instance_id}): \n'${event.data}'`);
+						log(`Ignored: Alert ended (id = ${jsonData.payload.instance_id}): \n'${event.data}'`);
 					}
 				}
 				break;
@@ -161,7 +161,7 @@ const connect = () =>
 				// Ignore
 				break;
 			default:
-				console.log("Received: '" + event.data + "'");
+				log("Received: '" + event.data + "'");
 		}
 	};
 };
@@ -248,7 +248,7 @@ function checkTime()
 	let curMins = curDate.getUTCMinutes();
 	let curSecs = curDate.getUTCSeconds();
 
-	console.log(`Checking at: ${leadZero(curHours)}:${leadZero(curMins)} vs ${leadZero(startHours)}:${leadZero(startMins)}`);
+	log(`Checking at: ${leadZero(curHours)}:${leadZero(curMins)} vs ${leadZero(startHours)}:${leadZero(startMins)}`);
 	if ((curHours > startHours || (curHours === startHours && curMins >= startMins)) && // start checking ?
 		(curHours < endHours || (curHours === endHours && curMins < endMins)))
 	{ // now >= start && now < end
@@ -269,12 +269,12 @@ function checkTime()
 		let difToStart = ((startHours * 60 + startMins) * 60000) - ((curHours * 3600 + curMins * 60 + curSecs) * 1000); // difference now to start time
 		if (difToStart < 0 || difToStart > 7200000)
 		{
-			console.log("Wait 2h");
+			log("Wait 2h");
 			setTimeout(checkTime, 7200000);
 		}
 		else
 		{
-			console.log(`Wait ${Math.floor(difToStart / 60000)}mins`);
+			log(`Wait ${Math.floor(difToStart / 60000)}mins`);
 			setTimeout(checkTime, difToStart + 10000); // (dif < 2h) -> wait dif + small margin of error
 		}
 	}
@@ -283,6 +283,12 @@ function checkTime()
 bot.login(TOKEN);
 
 // HELPERS
+function log(msg: string)
+{
+	let date = new Date();
+	console.log(`[${date.toLocaleDateString('de-DE')}-${date.toLocaleTimeString('de-DE')}] | ${msg}`);
+}
+
 function indexOfMax(arr: Array<Number>)
 {
 	if (arr.length === 0)
