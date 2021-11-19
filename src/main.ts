@@ -90,7 +90,7 @@ bot.on('error', (err) =>
 
 const connect = () =>
 {
-	if (ps2Socket.OPEN)
+	if (ps2Socket?.OPEN)
 	{
 		console.error("Warning: Tried opening non-closed connection!");
 		return;
@@ -259,7 +259,7 @@ function checkTime()
 	}
 	else
 	{
-		if (ps2Socket.OPEN)
+		if (ps2Socket?.OPEN)
 		{
 			bot.user?.setPresence(STATUSES.IDLE);
 			curAlerts.clear();
