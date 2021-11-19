@@ -90,7 +90,7 @@ bot.on('error', (err) =>
 
 const connect = () =>
 {
-	if (ps2Socket != null)
+	if (ps2Socket.OPEN)
 	{
 		console.error("Warning: Tried opening non-closed connection!");
 		return;
@@ -137,7 +137,6 @@ const connect = () =>
 				}
 				else if (jsonData.payload.metagame_event_state_name == "ended")
 				{
-
 					let msg = curAlerts.get(jsonData.payload.instance_id);
 					if (msg != null)
 					{
@@ -146,8 +145,8 @@ const connect = () =>
 							msg.edit({ embeds: [jsonToEmbed(jsonData.payload)] });
 							console.log(`Alert ended (id = ${jsonData.payload.instance_id}): \n'${event.data}'`);
 							curAlerts.delete(jsonData.payload.instance_id);
-						} 
-						catch (error) { /* If message was deleted -> do nothing */	}
+						}
+						catch (error) { /* If message was deleted -> do nothing */ }
 					}
 					else
 					{
@@ -176,6 +175,13 @@ const closeConnection = function ()
 	}
 
 	ps2Socket.close();
+	setTimeout(() =>
+	{
+		if (!ps2Socket.CLOSED) // hard close
+		{
+			ps2Socket.terminate();
+		}
+	}, 10000);
 };
 
 function jsonToEmbed(alert: AlertData)
@@ -253,7 +259,7 @@ function checkTime()
 	}
 	else
 	{
-		if (ps2Socket != null)
+		if (ps2Socket.OPEN)
 		{
 			bot.user?.setPresence(STATUSES.IDLE);
 			curAlerts.clear();
