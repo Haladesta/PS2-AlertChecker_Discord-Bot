@@ -71,6 +71,7 @@ const startHours: number = 17; // 17 (to UTC)
 const startMins: number = 30;
 const endHours: number = 20; // 20 (to UTC)
 const endMins: number = 30;
+let isTracking = false;
 
 const curAlerts: Map<String, Message<boolean>> = new Map();
 
@@ -85,14 +86,14 @@ bot.on('ready', async () =>
 });
 bot.on('error', (err) =>
 {
-	console.error(err.message);
+	log(err.message);
 })
 
 const connect = () =>
 {
 	if (ps2Socket?.OPEN)
 	{
-		console.error("Warning: Tried opening non-closed connection!");
+		log("Warning: Tried opening non-closed connection!");
 		return;
 	}
 
@@ -131,27 +132,39 @@ const connect = () =>
 				// Post Alert
 				if (jsonData.payload.metagame_event_state_name == "started")
 				{
+					if (isTracking)
+					{
+						return; // Shouldn't happen theoretically, just in case
+					}
 					var msg = await CHANNEL.send({ embeds: [jsonToEmbed(jsonData.payload)] });
 					curAlerts.set(jsonData.payload.instance_id, msg);
 					log(`New Alert (id = ${jsonData.payload.instance_id}): \n'${event.data}'`);
 				}
 				else if (jsonData.payload.metagame_event_state_name == "ended")
 				{
-					let msg = curAlerts.get(jsonData.payload.instance_id);
-					if (msg != null)
+					if (isTracking == false && curAlerts.size == 0)
 					{
-						try
-						{
-							msg.edit({ embeds: [jsonToEmbed(jsonData.payload)] });
-							log(`Alert ended (id = ${jsonData.payload.instance_id}): \n'${event.data}'`);
-							curAlerts.delete(jsonData.payload.instance_id);
-						}
-						catch (error) { /* If message was deleted -> do nothing */ }
+						closeConnection();
 					}
 					else
 					{
-						log(`Ignored: Alert ended (id = ${jsonData.payload.instance_id}): \n'${event.data}'`);
+						let msg = curAlerts.get(jsonData.payload.instance_id);
+						if (msg != null)
+						{
+							try
+							{
+								msg.edit({ embeds: [jsonToEmbed(jsonData.payload)] });
+								log(`Alert ended (id = ${jsonData.payload.instance_id}): \n'${event.data}'`);
+								curAlerts.delete(jsonData.payload.instance_id);
+							}
+							catch (error) { /* If message was deleted -> do nothing */ }
+						}
+						else
+						{
+							log(`Ignored: Alert ended (id = ${jsonData.payload.instance_id}): \n'${event.data}'`);
+						}
 					}
+
 				}
 				break;
 			case "serviceStateChanged":
@@ -170,7 +183,7 @@ const closeConnection = function ()
 {
 	if (ps2Socket.CLOSED)
 	{
-		console.error("Warning: Tried closing already closed connection!");
+		log("Warning: Tried closing already closed connection!");
 		return;
 	}
 
@@ -253,6 +266,7 @@ function checkTime()
 		(curHours < endHours || (curHours === endHours && curMins < endMins)))
 	{ // now >= start && now < end
 		bot.user?.setPresence(STATUSES.CHECKING);
+		isTracking = true;
 		connect();
 		let difToEnd = ((endHours * 60 + endMins) * 60000) - ((curHours * 3600 + curMins * 60 + curSecs) * 1000); // difference now to start time
 		setTimeout(checkTime, difToEnd + 10000); // wait until end of check-time to re-check
@@ -262,8 +276,11 @@ function checkTime()
 		if (ps2Socket?.OPEN)
 		{
 			bot.user?.setPresence(STATUSES.IDLE);
-			curAlerts.clear();
-			closeConnection();
+			isTracking = false;
+			if (curAlerts.size == 0)
+			{
+				closeConnection();
+			}
 		}
 
 		let difToStart = ((startHours * 60 + startMins) * 60000) - ((curHours * 3600 + curMins * 60 + curSecs) * 1000); // difference now to start time
