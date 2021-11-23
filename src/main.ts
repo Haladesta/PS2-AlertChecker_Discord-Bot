@@ -130,41 +130,34 @@ const connect = () =>
 		{
 			case "serviceMessage":
 				// Post Alert
-				if (jsonData.payload.metagame_event_state_name == "started")
+				if (jsonData.payload.metagame_event_state_name == "started" && isTracking)
 				{
-					if (isTracking)
-					{
-						return; // Shouldn't happen theoretically, just in case
-					}
 					var msg = await CHANNEL.send({ embeds: [jsonToEmbed(jsonData.payload)] });
 					curAlerts.set(jsonData.payload.instance_id, msg);
 					log(`New Alert (id = ${jsonData.payload.instance_id}): \n'${event.data}'`);
 				}
 				else if (jsonData.payload.metagame_event_state_name == "ended")
 				{
-					if (isTracking == false && curAlerts.size == 0)
+					let msg = curAlerts.get(jsonData.payload.instance_id);
+					if (msg != null)
 					{
-						closeConnection();
+						try
+						{
+							msg.edit({ embeds: [jsonToEmbed(jsonData.payload)] });
+							log(`Alert ended (id = ${jsonData.payload.instance_id}): \n'${event.data}'`);
+
+							curAlerts.delete(jsonData.payload.instance_id);
+							if (isTracking == false && curAlerts.size == 0)
+							{
+								closeConnection();
+							}
+						}
+						catch (error) { /* If message was deleted -> do nothing */ }
 					}
 					else
 					{
-						let msg = curAlerts.get(jsonData.payload.instance_id);
-						if (msg != null)
-						{
-							try
-							{
-								msg.edit({ embeds: [jsonToEmbed(jsonData.payload)] });
-								log(`Alert ended (id = ${jsonData.payload.instance_id}): \n'${event.data}'`);
-								curAlerts.delete(jsonData.payload.instance_id);
-							}
-							catch (error) { /* If message was deleted -> do nothing */ }
-						}
-						else
-						{
-							log(`Ignored: Alert ended (id = ${jsonData.payload.instance_id}): \n'${event.data}'`);
-						}
+						log(`Ignored: Alert ended (id = ${jsonData.payload.instance_id})`);
 					}
-
 				}
 				break;
 			case "serviceStateChanged":
@@ -261,26 +254,30 @@ function checkTime()
 	let curMins = curDate.getUTCMinutes();
 	let curSecs = curDate.getUTCSeconds();
 
-	log(`Checking at: ${leadZero(curHours)}:${leadZero(curMins)} vs ${leadZero(startHours)}:${leadZero(startMins)}`);
+	log(`Checking at: ${leadZero(curHours)}:${leadZero(curMins)} vs ${leadZero(startHours)}:${leadZero(startMins)}-${leadZero(endHours)}:${leadZero(endMins)}`);
 	if ((curHours > startHours || (curHours === startHours && curMins >= startMins)) && // start checking ?
-		(curHours < endHours || (curHours === endHours && curMins < endMins)))
-	{ // now >= start && now < end
-		bot.user?.setPresence(STATUSES.CHECKING);
-		isTracking = true;
-		connect();
-		let difToEnd = ((endHours * 60 + endMins) * 60000) - ((curHours * 3600 + curMins * 60 + curSecs) * 1000); // difference now to start time
-		setTimeout(checkTime, difToEnd + 10000); // wait until end of check-time to re-check
+		(curHours < endHours || (curHours === endHours && curMins < endMins))) // now >= start && now < end
+	{
+		if (!isTracking)
+		{
+			bot.user?.setPresence(STATUSES.CHECKING);
+			isTracking = true;
+			connect();
+
+			let difToEnd = ((endHours * 60 + endMins) * 60000) - ((curHours * 3600 + curMins * 60 + curSecs) * 1000); // difference now to start time
+			setTimeout(checkTime, difToEnd + 10000); // wait until end of check-time to re-check
+		}
 	}
 	else
 	{
-		if (ps2Socket?.OPEN)
+		if (isTracking)
 		{
 			bot.user?.setPresence(STATUSES.IDLE);
 			isTracking = false;
-			if (curAlerts.size == 0)
-			{
-				closeConnection();
-			}
+		}
+		if (ps2Socket?.OPEN && curAlerts.size == 0)
+		{
+			closeConnection();
 		}
 
 		let difToStart = ((startHours * 60 + startMins) * 60000) - ((curHours * 3600 + curMins * 60 + curSecs) * 1000); // difference now to start time
