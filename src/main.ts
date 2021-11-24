@@ -6,11 +6,11 @@ import WebSocket from 'ws';
 
 log("-------------------------------------");
 const PORT: string = process.env.PORT || "5000";
-import http from 'http';
-http.createServer((request: any, response: any) =>
+import http, { IncomingMessage, ServerResponse } from 'http';
+http.createServer((request: IncomingMessage, response: ServerResponse) =>
 {
 	response.writeHead(200);
-	response.end();
+	response.end(`State: ${ps2Socket.readyState}`);
 }).listen(PORT);
 log(`Listening on Port ${PORT}`);
 log("-------------------------------------");
@@ -42,7 +42,7 @@ const CONTINENTS = {
 
 let CHANNEL: TextChannel;
 const uri: string = `wss://push.planetside2.com/streaming?environment=ps2&service-id=s:${process.env.SERVICE_ID}`;
-var ps2Socket: WebSocket;
+let ps2Socket: WebSocket;
 
 interface AlertData
 {
@@ -69,8 +69,8 @@ interface PS2EventMessage
 // default 18:00 - 21:30
 const startHours: number = 17; // 17 (to UTC)
 const startMins: number = 30;
-const endHours: number = 20; // 20 (to UTC)
-const endMins: number = 30;
+const endHours: number = 21; // 20 (to UTC)
+const endMins: number = 2;
 let isTracking = false;
 
 const curAlerts: Map<String, Message<boolean>> = new Map();
@@ -91,7 +91,7 @@ bot.on('error', (err) =>
 
 const connect = () =>
 {
-	if (ps2Socket?.OPEN)
+	if (ps2Socket != undefined && ps2Socket.readyState == WebSocket.OPEN)
 	{
 		log("Warning: Tried opening non-closed connection!");
 		return;
@@ -149,7 +149,7 @@ const connect = () =>
 							curAlerts.delete(jsonData.payload.instance_id);
 							if (isTracking == false && curAlerts.size == 0)
 							{
-								closeConnection();
+								setTimeout(closeConnection, 1000);
 							}
 						}
 						catch (error) { /* If message was deleted -> do nothing */ }
@@ -174,7 +174,7 @@ const connect = () =>
 
 const closeConnection = function ()
 {
-	if (ps2Socket.CLOSED)
+	if (ps2Socket == undefined || ps2Socket.readyState == WebSocket.CLOSED)
 	{
 		log("Warning: Tried closing already closed connection!");
 		return;
@@ -183,7 +183,7 @@ const closeConnection = function ()
 	ps2Socket.close();
 	setTimeout(() =>
 	{
-		if (!ps2Socket.CLOSED) // hard close
+		if (ps2Socket.readyState != WebSocket.CLOSED) // hard close
 		{
 			ps2Socket.terminate();
 		}
@@ -275,7 +275,7 @@ function checkTime()
 			bot.user?.setPresence(STATUSES.IDLE);
 			isTracking = false;
 		}
-		if (ps2Socket?.OPEN && curAlerts.size == 0)
+		if (ps2Socket != undefined && ps2Socket.readyState != WebSocket.CLOSED && curAlerts.size == 0)
 		{
 			closeConnection();
 		}
