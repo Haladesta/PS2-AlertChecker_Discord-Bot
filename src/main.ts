@@ -120,6 +120,7 @@ const connect = () =>
 
 	ps2Socket.onerror = event =>
 	{
+		bot.user?.setPresence(STATUSES.ERROR);
 		log("Connection Error: " + event);
 	};
 
@@ -193,11 +194,24 @@ const closeConnection = function ()
 function jsonToEmbed(alert: AlertData)
 {
 	let alertType = alertTypes[alert.metagame_event_id]; // read from json
+	let startTimeStamp;
+	let endTimeStamp;
+	if (alert.metagame_event_state_name == "started")
+	{
+		startTimeStamp = alert.timestamp;
+		endTimeStamp = parseInt(alert.timestamp) + 5400;
+	}
+	else
+	{
+		startTimeStamp = parseInt(alert.timestamp) - 5400;
+		endTimeStamp = alert.timestamp;
+	}
+
 	let alertEmbed = new MessageEmbed()
 		.setThumbnail('https://emoji.gg/assets/emoji/2891_RedAlert.gif')
 		.setTitle(alertType.name)
 		//.addField("Details:", `[${alertType.description}](https://ps2alerts.com/alert/${alert.world_id}-${alert.instance_id})`)
-		.addField("Timeframe", `<t:${alert.timestamp}:t> — <t:${parseInt(alert.timestamp) + (alert.metagame_event_state_name == "ended" ? -5400 : 5400)}:t>`)
+		.addField("Timeframe", `<t:${startTimeStamp}:t> — <t:${endTimeStamp}:t>`)
 		//.addField("Activity Level", popLevel, true)
 		//.addField('Territory Control',
 		//	 `<:VS:793952227558424586> **VS**: ${scores[0]}%\
@@ -224,7 +238,7 @@ function jsonToEmbed(alert: AlertData)
 				break;
 		};
 	}
-	else if (alert.metagame_event_state_name == "ended")
+	else
 	{
 		let scores = [+alert.faction_vs, +alert.faction_nc, +alert.faction_tr];
 		switch (indexOfMax(scores))
