@@ -15,7 +15,7 @@ http.createServer((request: IncomingMessage, response: ServerResponse) =>
 log(`Listening on Port ${PORT}`);
 log("-------------------------------------");
 
-import { Channel, Client, Intents, Message, MessageEmbed, PresenceData, TextChannel } from 'discord.js';
+import { Channel, Client, Intents, Message, MessageEmbed, PresenceData, TextChannel, ColorResolvable, HexColorString } from 'discord.js';
 const myIntents: Intents = new Intents();
 myIntents.add(Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_EMOJIS_AND_STICKERS); // GUILD_MEMBERS, DIRECT_MESSAGES
 const bot: Client = new Client({ intents: myIntents });
@@ -38,7 +38,18 @@ const CONTINENTS = {
 	4: "Hossin",
 	6: "Amerish",
 	8: "Esamir",
+	14: "Koltyr",
+	344: "Oshur"
 };
+
+const CONTINENT_COLORS = {
+	2: '#fcda2b' as HexColorString,
+	4: '#b4de2a' as HexColorString,
+	6: '#59e632' as HexColorString,
+	8: '#cbd5e1' as HexColorString,
+	14: '#454545' as HexColorString,
+	344: '#168cfa' as HexColorString
+}
 
 let CHANNEL: TextChannel;
 const uri: string = `wss://push.planetside2.com/streaming?environment=ps2&service-id=s:${process.env.SERVICE_ID}`;
@@ -121,7 +132,7 @@ const connect = () =>
 	ps2Socket.onerror = event =>
 	{
 		bot.user?.setPresence(STATUSES.ERROR);
-		log("Connection Error: " + event);
+		log("Connection Error: \n" + event.error.message + "\n" + event.error.stack);
 	};
 
 	ps2Socket.onmessage = async (event) =>
@@ -222,21 +233,7 @@ function jsonToEmbed(alert: AlertData)
 
 	if (alert.metagame_event_state_name == "started")
 	{
-		switch (CONTINENTS[alert.zone_id])
-		{
-			case 'Amerish':
-				alertEmbed.setColor('#59e632');
-				break;
-			case 'Esamir':
-				alertEmbed.setColor('#cbd5e1');
-				break;
-			case 'Indar':
-				alertEmbed.setColor('#fcda2b');
-				break;
-			case 'Hossin':
-				alertEmbed.setColor('#b4de2a');
-				break;
-		};
+		alertEmbed.setColor(CONTINENT_COLORS[alert.zone_id]);
 	}
 	else
 	{
