@@ -17,7 +17,7 @@ log("-------------------------------------");
 
 import { Channel, Client, Intents, Message, MessageEmbed, PresenceData, TextChannel, ColorResolvable, HexColorString } from 'discord.js';
 const myIntents: Intents = new Intents();
-myIntents.add(Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_EMOJIS_AND_STICKERS); // GUILD_MEMBERS, DIRECT_MESSAGES
+myIntents.add(Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_EMOJIS_AND_STICKERS, Intents.FLAGS.GUILD_MEMBERS); // DIRECT_MESSAGES
 const bot: Client = new Client({ intents: myIntents });
 const TOKEN: string = process.env.TOKEN || "";
 
@@ -95,10 +95,25 @@ bot.on('ready', async () =>
 
 	checkTime();
 });
-bot.on('error', (err) =>
+bot.on('error', err =>
 {
 	log(err.message);
-})
+});
+bot.on('messageCreate', msg => {
+	let pro_users = ["530104861824647180", "160100096799801344"]
+	if (pro_users.includes(msg.author.id) && msg.content.toLowerCase().includes("penislantis")) {
+		msg.reply(
+			'Eyo, Atlantis? More like **Penislantis**, am I right?! <:HAHAHAHA:711999347474300939> <:HAHAHAHA:711999347474300939>\n'
+			+ ' :middle_finger:⠀⠀⠀⠀:smile:\n\n'
+			+ '⠀⠀:bug::zzz: :shirt: :bug:\n\n'
+			+ '⠀⠀⠀⠀⠀⠀:fuelpump: :boot:\n\n'
+			+ '⠀⠀⠀⠀⠀:zap:⠀8==:fist:====D:sweat_drops:\n\n'
+			+ '⠀⠀⠀ :guitar:⠀⠀⠀⠀:closed_umbrella:\n\n'
+			+ '⠀⠀⠀:boot:⠀⠀⠀⠀⠀:boot:\n\n'
+			+ '<@210082180037083136> <@210082180037083136> <@210082180037083136>'
+		);
+	}
+});
 
 const connect = () =>
 {
@@ -304,6 +319,7 @@ function checkTime()
 		}
 	}
 }
+
 
 bot.login(TOKEN);
 
