@@ -52,6 +52,7 @@ const CONTINENT_COLORS = {
 }
 
 let CHANNEL: TextChannel;
+let DEBUG_CHANNEL: TextChannel;
 const uri: string = `wss://push.planetside2.com/streaming?environment=ps2&service-id=s:${process.env.SERVICE_ID}`;
 let ps2Socket: WebSocket;
 
@@ -92,6 +93,8 @@ bot.on('ready', async () =>
 	bot.user?.setPresence(STATUSES.IDLE);
 	let channelid: string = process.env.CHANNEL || "";
 	CHANNEL = await bot.channels.fetch(channelid) as TextChannel;
+	channelid = process.env.DEBUG_CHANNEL || "";
+	DEBUG_CHANNEL = await bot.channels.fetch(channelid) as TextChannel;
 
 	checkTime();
 });
@@ -99,9 +102,11 @@ bot.on('error', err =>
 {
 	log(err.message);
 });
-bot.on('messageCreate', msg => {
+bot.on('messageCreate', msg =>
+{
 	let pro_users = ["530104861824647180", "160100096799801344"]
-	if (pro_users.includes(msg.author.id) && msg.content.toLowerCase().includes("penislantis")) {
+	if (pro_users.includes(msg.author.id) && msg.content.toLowerCase().includes("penislantis"))
+	{
 		msg.reply(
 			'Eyo, Atlantis? More like **Penislantis**, am I right?! <:HAHAHAHA:711999347474300939> <:HAHAHAHA:711999347474300939>\n'
 			+ ' :middle_finger:⠀⠀⠀⠀:smile:\n\n'
@@ -159,9 +164,22 @@ const connect = () =>
 				// Post Alert
 				if (jsonData.payload.metagame_event_state_name == "started" && isTracking)
 				{
-					var msg = await CHANNEL.send({ embeds: [jsonToEmbed(jsonData.payload)] });
-					curAlerts.set(jsonData.payload.instance_id, msg);
-					log(`New Alert (id = ${jsonData.payload.instance_id}): \n'${event.data}'`);
+					try
+					{
+						var msg = await CHANNEL.send({ embeds: [jsonToEmbed(jsonData.payload)] });
+						curAlerts.set(jsonData.payload.instance_id, msg);
+						log(`New Alert (id = ${jsonData.payload.instance_id}): \n'${event.data}'`);
+					} catch (error)
+					{
+						if (typeof error === "string") {
+							await DEBUG_CHANNEL.send(`<@${process.env.PING_USER}>\n\`${error}\``);
+						} else if (error instanceof Error) {
+							await DEBUG_CHANNEL.send(`<@${process.env.PING_USER}>\n\`${error}\`\n\`${error.stack}\``);
+						}
+						console.error("Unexpected Error parsing alert-data:");
+						console.error(jsonData);
+						throw error;
+					}
 				}
 				else if (jsonData.payload.metagame_event_state_name == "ended")
 				{
