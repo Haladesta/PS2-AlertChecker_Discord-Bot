@@ -40,8 +40,8 @@ const CONTINENT_COLORS = {
 	344: '#168cfa' as HexColorString
 }
 
-const CHANNEL = await bot.channels.fetch(process.env.CHANNEL || "") as TextChannel;
-const DEBUG_CHANNEL = await bot.channels.fetch(process.env.DEBUG_CHANNEL || "") as TextChannel;
+let CHANNEL: TextChannel;
+let DEBUG_CHANNEL: TextChannel;
 const URI: string = `wss://push.planetside2.com/streaming?environment=ps2&service-id=s:${process.env.SERVICE_ID}`;
 let ps2Socket: WebSocket;
 
@@ -78,6 +78,9 @@ const curAlerts: Map<string, Message<boolean>> = new Map();
 
 bot.on('ready', async () =>
 {
+	CHANNEL = await bot.channels.fetch(process.env.CHANNEL || "") as TextChannel;
+	DEBUG_CHANNEL = await bot.channels.fetch(process.env.DEBUG_CHANNEL || "") as TextChannel;
+
 	log(`Logged in as ${bot.user?.tag}!`);
 	bot.user?.setPresence(STATUSES.IDLE);
 
