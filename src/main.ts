@@ -4,17 +4,6 @@ require('dotenv').config();
 import alertTypes from './alerts.json';
 import WebSocket from 'ws';
 
-log("-------------------------------------");
-const PORT: string = process.env.PORT || "5000";
-import http, { IncomingMessage, ServerResponse } from 'http';
-http.createServer((request: IncomingMessage, response: ServerResponse) =>
-{
-	response.writeHead(200);
-	response.end(`State: ${ps2Socket.readyState}`);
-}).listen(PORT);
-log(`Listening on Port ${PORT}`);
-log("-------------------------------------");
-
 import { Channel, Client, Intents, Message, MessageEmbed, PresenceData, TextChannel, ColorResolvable, HexColorString } from 'discord.js';
 const myIntents: Intents = new Intents();
 myIntents.add(Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_EMOJIS_AND_STICKERS, Intents.FLAGS.GUILD_MEMBERS); // DIRECT_MESSAGES
@@ -51,9 +40,9 @@ const CONTINENT_COLORS = {
 	344: '#168cfa' as HexColorString
 }
 
-let CHANNEL: TextChannel;
-let DEBUG_CHANNEL: TextChannel;
-const uri: string = `wss://push.planetside2.com/streaming?environment=ps2&service-id=s:${process.env.SERVICE_ID}`;
+const CHANNEL = await bot.channels.fetch(process.env.CHANNEL || "") as TextChannel;
+const DEBUG_CHANNEL = await bot.channels.fetch(process.env.DEBUG_CHANNEL || "") as TextChannel;
+const URI: string = `wss://push.planetside2.com/streaming?environment=ps2&service-id=s:${process.env.SERVICE_ID}`;
 let ps2Socket: WebSocket;
 
 interface AlertData
@@ -78,23 +67,19 @@ interface PS2EventMessage
 	type: string
 }
 
-// default 18:00 - 21:30
-const startHours: number = 17; // 17 (to UTC)
-const startMins: number = 30;
-const endHours: number = 20; // 20 (to UTC)
-const endMins: number = 30;
+// time in UTC
+const START_DATE = new Date();
+START_DATE.setHours(16, 30, 0, 0);
+const END_DATE = new Date();
+END_DATE.setHours(20, 30, 0, 0);
 let isTracking = false;
 
-const curAlerts: Map<String, Message<boolean>> = new Map();
+const curAlerts: Map<string, Message<boolean>> = new Map();
 
 bot.on('ready', async () =>
 {
 	log(`Logged in as ${bot.user?.tag}!`);
 	bot.user?.setPresence(STATUSES.IDLE);
-	let channelid: string = process.env.CHANNEL || "";
-	CHANNEL = await bot.channels.fetch(channelid) as TextChannel;
-	channelid = process.env.DEBUG_CHANNEL || "";
-	DEBUG_CHANNEL = await bot.channels.fetch(channelid) as TextChannel;
 
 	checkTime();
 });
@@ -107,6 +92,7 @@ bot.on('messageCreate', msg =>
 	let pro_users = ["530104861824647180", "160100096799801344"]
 	if (pro_users.includes(msg.author.id) && msg.content.toLowerCase().includes("penislantis"))
 	{
+		let ping_user_id = process.env.PING_USER || ""
 		msg.reply(
 			'Eyo, Atlantis? More like **Penislantis**, am I right?! <:HAHAHAHA:711999347474300939> <:HAHAHAHA:711999347474300939>\n'
 			+ ' :middle_finger:⠀⠀⠀⠀:smile:\n\n'
@@ -115,26 +101,26 @@ bot.on('messageCreate', msg =>
 			+ '⠀⠀⠀⠀⠀:zap:⠀8==:fist:====D:sweat_drops:\n\n'
 			+ '⠀⠀⠀ :guitar:⠀⠀⠀⠀:closed_umbrella:\n\n'
 			+ '⠀⠀⠀:boot:⠀⠀⠀⠀⠀:boot:\n\n'
-			+ '<@210082180037083136> <@210082180037083136> <@210082180037083136>'
+			+ `<@${ping_user_id}> <@${ping_user_id}> <@${ping_user_id}>`
 		);
 	}
 });
 
-const connect = () =>
+function connect(): void
 {
-	if (ps2Socket != undefined && ps2Socket.readyState == WebSocket.OPEN)
+	if (ps2Socket?.readyState == WebSocket.OPEN)
 	{
 		log("Warning: Tried opening non-closed connection!");
 		return;
 	}
 
-	ps2Socket = new WebSocket(uri);
+	ps2Socket = new WebSocket(URI);
 
 	ps2Socket.onopen = (event) =>
 	{
 		log('Client Connected');
 
-		var subscribeObj = {
+		let subscribeObj = {
 			"service": "event",
 			"action": "subscribe",
 			"worlds": ["13"], // 13 = Cobalt, others: "10", "40", "17", "1"
@@ -153,6 +139,7 @@ const connect = () =>
 	{
 		bot.user?.setPresence(STATUSES.ERROR);
 		log("Connection Error: \n" + event.error.message + "\n" + event.error.stack);
+		setTimeout(checkTime, 600_000);
 	};
 
 	ps2Socket.onmessage = async (event) =>
@@ -162,23 +149,26 @@ const connect = () =>
 		{
 			case "serviceMessage":
 				// Post Alert
-				if (jsonData.payload.metagame_event_state_name == "started" && isTracking)
+				if (jsonData.payload.metagame_event_state_name == "started")
 				{
-					try
-					{
-						var msg = await CHANNEL.send({ embeds: [jsonToEmbed(jsonData.payload)] });
-						curAlerts.set(jsonData.payload.instance_id, msg);
-						log(`New Alert (id = ${jsonData.payload.instance_id}): \n'${event.data}'`);
-					} catch (error)
-					{
-						if (typeof error === "string") {
-							await DEBUG_CHANNEL.send(`<@${process.env.PING_USER}>\n\`${error}\``);
-						} else if (error instanceof Error) {
-							await DEBUG_CHANNEL.send(`<@${process.env.PING_USER}>\n\`${error}\`\n\`${error.stack}\``);
+					if (isTracking) {
+						try
+						{
+							let msg = await CHANNEL.send({ embeds: [jsonToEmbed(jsonData.payload)] });
+							curAlerts.set(jsonData.payload.instance_id, msg);
+							log(`New Alert (id = ${jsonData.payload.instance_id}): \n'${event.data}'`);
+						} 
+						catch (error)
+						{
+							if (typeof error === "string") {
+								await DEBUG_CHANNEL.send(`<@${process.env.PING_USER}>\n\`${error}\``);
+							} else if (error instanceof Error) {
+								await DEBUG_CHANNEL.send(`<@${process.env.PING_USER}>\n\`${error}\`\n\`${error.stack}\``);
+							}
+							console.error("Unexpected Error parsing alert-data:");
+							console.error(jsonData);
+							throw error;
 						}
-						console.error("Unexpected Error parsing alert-data:");
-						console.error(jsonData);
-						throw error;
 					}
 				}
 				else if (jsonData.payload.metagame_event_state_name == "ended")
@@ -194,7 +184,7 @@ const connect = () =>
 							curAlerts.delete(jsonData.payload.instance_id);
 							if (isTracking == false && curAlerts.size == 0)
 							{
-								setTimeout(closeConnection, 1000);
+								setTimeout(closeConnection, 1_000);
 							}
 						}
 						catch (error) { /* If message was deleted -> do nothing */ }
@@ -217,7 +207,8 @@ const connect = () =>
 	};
 };
 
-const closeConnection = function ()
+
+function closeConnection(): void
 {
 	if (ps2Socket == undefined || ps2Socket.readyState == WebSocket.CLOSED)
 	{
@@ -225,6 +216,7 @@ const closeConnection = function ()
 		return;
 	}
 
+	log("Closing...")
 	ps2Socket.close();
 	setTimeout(() =>
 	{
@@ -232,10 +224,10 @@ const closeConnection = function ()
 		{
 			ps2Socket.terminate();
 		}
-	}, 10000);
+	}, 10_000);
 };
 
-function jsonToEmbed(alert: AlertData)
+function jsonToEmbed(alert: AlertData): MessageEmbed
 {
 	let alertType = alertTypes[alert.metagame_event_id]; // read from json
 	let startTimeStamp;
@@ -243,11 +235,11 @@ function jsonToEmbed(alert: AlertData)
 	if (alert.metagame_event_state_name == "started")
 	{
 		startTimeStamp = alert.timestamp;
-		endTimeStamp = parseInt(alert.timestamp) + 5400;
+		endTimeStamp = parseInt(alert.timestamp) + 5_400;
 	}
 	else
 	{
-		startTimeStamp = parseInt(alert.timestamp) - 5400;
+		startTimeStamp = parseInt(alert.timestamp) - 5_400;
 		endTimeStamp = alert.timestamp;
 	}
 
@@ -291,26 +283,25 @@ function jsonToEmbed(alert: AlertData)
 	return alertEmbed;
 }
 
-function checkTime()
+function checkTime(): void
 {
-	let curDate = new Date();
-	let curHours = curDate.getUTCHours();
-	let curMins = curDate.getUTCMinutes();
-	let curSecs = curDate.getUTCSeconds();
+	let now = new Date();
+	START_DATE.setFullYear(now.getFullYear(), now.getMonth(), now.getDate());
+	END_DATE.setFullYear(now.getFullYear(), now.getMonth(), now.getDate());
 
-	log(`Checking at: ${leadZero(curHours)}:${leadZero(curMins)} vs ${leadZero(startHours)}:${leadZero(startMins)}-${leadZero(endHours)}:${leadZero(endMins)}`);
-	if ((curHours > startHours || (curHours === startHours && curMins >= startMins)) && // start checking ?
-		(curHours < endHours || (curHours === endHours && curMins < endMins))) // now >= start && now < end
+	log(`Checking at: ${now.toLocaleTimeString()} vs ${START_DATE.toLocaleTimeString()}-${END_DATE.toLocaleTimeString()}`);
+	if (START_DATE <= now && now < END_DATE) // start checking ?
 	{
 		if (!isTracking)
 		{
 			bot.user?.setPresence(STATUSES.CHECKING);
 			isTracking = true;
 			connect();
-
-			let difToEnd = ((endHours * 60 + endMins) * 60000) - ((curHours * 3600 + curMins * 60 + curSecs) * 1000); // difference now to start time
-			setTimeout(checkTime, difToEnd + 10000); // wait until end of check-time to re-check
+			
+			let difToEnd = END_DATE.getTime() - now.getTime();
+			setTimeout(checkTime, difToEnd + 10_000); // wait until end of check-time to re-check
 		}
+		else { /* Do nothing */ }
 	}
 	else
 	{
@@ -319,21 +310,22 @@ function checkTime()
 			bot.user?.setPresence(STATUSES.IDLE);
 			isTracking = false;
 		}
-		if (ps2Socket != undefined && ps2Socket.readyState != WebSocket.CLOSED && curAlerts.size == 0)
+
+		if (ps2Socket?.readyState != WebSocket.CLOSED && curAlerts.size == 0)
 		{
 			closeConnection();
 		}
 
-		let difToStart = ((startHours * 60 + startMins) * 60000) - ((curHours * 3600 + curMins * 60 + curSecs) * 1000); // difference now to start time
-		if (difToStart < 0 || difToStart > 7200000)
+		let difToStart = START_DATE.getTime() - now.getTime(); // difference now to start time
+		if (difToStart < 0 || difToStart > 7_200_000)
 		{
 			log("Wait 2h");
-			setTimeout(checkTime, 7200000);
+			setTimeout(checkTime, 7_200_000);
 		}
 		else
 		{
-			log(`Wait ${Math.floor(difToStart / 60000)}mins`);
-			setTimeout(checkTime, difToStart + 10000); // (dif < 2h) -> wait dif + small margin of error
+			log(`Wait ${Math.floor(difToStart / 60_000)}mins`);
+			setTimeout(checkTime, difToStart + 10_000); // (dif < 2h) -> wait dif + small margin of error
 		}
 	}
 }
@@ -342,23 +334,23 @@ function checkTime()
 bot.login(TOKEN);
 
 // HELPERS
-function log(msg: string)
+function log(msg: string): void
 {
 	let date = new Date();
 	console.log(`[${date.toLocaleDateString('de-DE')}-${date.toLocaleTimeString('de-DE')}] | ${msg}`);
 }
 
-function indexOfMax(arr: Array<Number>)
+function indexOfMax(arr: Array<number>): number
 {
 	if (arr.length === 0)
 	{
 		return -1;
 	}
 
-	var max = arr[0];
-	var maxIndex = 0;
+	let max = arr[0];
+	let maxIndex = 0;
 
-	for (var i = 1; i < arr.length; i++)
+	for (let i = 1; i < arr.length; i++)
 	{
 		if (arr[i] > max)
 		{
@@ -370,7 +362,7 @@ function indexOfMax(arr: Array<Number>)
 	return maxIndex;
 }
 
-function leadZero(num: Number)
+function leadZero(num: number): string
 {
 	if (num < 10)
 		return `0${num}`;
