@@ -69,9 +69,9 @@ interface PS2EventMessage
 
 // time in UTC
 const START_DATE = new Date();
-START_DATE.setHours(16, 30, 0, 0);
+START_DATE.setHours(17, 30, 0, 0);
 const END_DATE = new Date();
-END_DATE.setHours(20, 30, 0, 0);
+END_DATE.setHours(22, 0, 0, 0);
 let isTracking = false;
 
 const curAlerts: Map<string, Message<boolean>> = new Map();
@@ -314,7 +314,7 @@ function checkTime(): void
 			isTracking = false;
 		}
 
-		if (ps2Socket?.readyState != WebSocket.CLOSED && curAlerts.size == 0)
+		if (ps2Socket != undefined && ps2Socket.readyState == WebSocket.OPEN && curAlerts.size == 0)
 		{
 			closeConnection();
 		}
