@@ -2,7 +2,7 @@
 require('dotenv').config();
 //import got from 'got';
 import alertTypes from './alerts.json';
-import WebSocket from 'ws';
+import {WebSocket, ClientOptions} from 'ws';
 
 import { Channel, Client, Intents, Message, MessageEmbed, PresenceData, TextChannel, ColorResolvable, HexColorString } from 'discord.js';
 const myIntents: Intents = new Intents();
@@ -117,7 +117,12 @@ function connect(): void
 		return;
 	}
 
-	ps2Socket = new WebSocket(URI);
+	let conf = process.env.REJECT_UNAUTHORIZED
+	let rejectUnauthorized = true
+	if (conf == "false") {
+		rejectUnauthorized = false
+	}
+	ps2Socket = new WebSocket(URI, {"rejectUnauthorized": rejectUnauthorized });
 
 	ps2Socket.onopen = (event) =>
 	{
