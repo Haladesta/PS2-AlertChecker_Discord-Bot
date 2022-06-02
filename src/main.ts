@@ -113,7 +113,7 @@ function connect(): void
 {
 	if (ps2Socket?.readyState == WebSocket.OPEN)
 	{
-		log("Warning: Tried opening non-closed connection!");
+		log("Warning: Tried opening non-closed connection!", log_level.warn);
 		return;
 	}
 
@@ -215,12 +215,11 @@ function connect(): void
 	};
 };
 
-
 function closeConnection(): void
 {
 	if (ps2Socket == undefined || ps2Socket.readyState == WebSocket.CLOSED)
 	{
-		log("Warning: Tried closing already closed connection!");
+		log("Warning: Tried closing already closed connection!", log_level.warn);
 		return;
 	}
 
@@ -296,7 +295,7 @@ function checkTime(): void
 	let now = new Date();
 	START_DATE.setFullYear(now.getFullYear(), now.getMonth(), now.getDate());
 	END_DATE.setFullYear(now.getFullYear(), now.getMonth(), now.getDate());
-
+	
 	log(`Checking at: ${now.toLocaleTimeString()} vs ${START_DATE.toLocaleTimeString()}-${END_DATE.toLocaleTimeString()}`);
 	if (START_DATE <= now && now < END_DATE) // start checking ?
 	{
@@ -318,7 +317,7 @@ function checkTime(): void
 			bot.user?.setPresence(STATUSES.IDLE);
 			isTracking = false;
 		}
-
+		
 		if (ps2Socket != undefined && ps2Socket.readyState == WebSocket.OPEN && curAlerts.size == 0)
 		{
 			closeConnection();
@@ -342,10 +341,26 @@ function checkTime(): void
 bot.login(TOKEN);
 
 // HELPERS
-function log(msg: string): void
+enum log_level {
+	info = 0, 
+	warn = 1, 
+	error = 2
+}
+function log(msg: string, level: log_level = log_level.info): void
 {
 	let date = new Date();
-	console.log(`[${date.toLocaleDateString('de-DE')}-${date.toLocaleTimeString('de-DE')}] | ${msg}`);
+	var timestamp = `${date.toLocaleDateString('de-DE')}-${date.toLocaleTimeString('de-DE')}`
+	switch (level) {
+		case log_level.info:
+			console.log(`[${timestamp}] | ${msg}`);
+			break;
+		case log_level.warn:
+			console.warn(`[${timestamp}] | ${msg}`);
+			break;
+		case log_level.error:
+			console.error(`[${timestamp}] | ${msg}`);
+			break;
+	}
 }
 
 function indexOfMax(arr: Array<number>): number
