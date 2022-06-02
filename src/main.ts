@@ -296,7 +296,7 @@ function checkTime(): void
 	START_DATE.setFullYear(now.getFullYear(), now.getMonth(), now.getDate());
 	END_DATE.setFullYear(now.getFullYear(), now.getMonth(), now.getDate());
 	
-	log(`Checking at: ${now.toLocaleTimeString()} vs ${START_DATE.toLocaleTimeString()}-${END_DATE.toLocaleTimeString()}`);
+	log(`Checking at: ${now.toLocaleTimeString('de-DE')} vs ${START_DATE.toLocaleTimeString('de-DE')}-${END_DATE.toLocaleTimeString('de-DE')}`);
 	if (START_DATE <= now && now < END_DATE) // start checking ?
 	{
 		if (!isTracking)
