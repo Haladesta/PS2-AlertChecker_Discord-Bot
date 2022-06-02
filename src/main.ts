@@ -2,7 +2,7 @@
 require('dotenv').config();
 //import got from 'got';
 import alertTypes from './alerts.json';
-import {WebSocket, ClientOptions} from 'ws';
+import { WebSocket, ClientOptions } from 'ws';
 
 import { Channel, Client, Intents, Message, MessageEmbed, PresenceData, TextChannel, ColorResolvable, HexColorString } from 'discord.js';
 const myIntents: Intents = new Intents();
@@ -119,10 +119,11 @@ function connect(): void
 
 	let conf = process.env.REJECT_UNAUTHORIZED
 	let rejectUnauthorized = true
-	if (conf == "false") {
+	if (conf == "false")
+	{
 		rejectUnauthorized = false
 	}
-	ps2Socket = new WebSocket(URI, {"rejectUnauthorized": rejectUnauthorized });
+	ps2Socket = new WebSocket(URI, { "rejectUnauthorized": rejectUnauthorized });
 
 	ps2Socket.onopen = (event) =>
 	{
@@ -159,18 +160,21 @@ function connect(): void
 				// Post Alert
 				if (jsonData.payload.metagame_event_state_name == "started")
 				{
-					if (isTracking) {
+					if (isTracking)
+					{
 						try
 						{
 							let msg = await CHANNEL.send({ embeds: [jsonToEmbed(jsonData.payload)] });
 							curAlerts.set(jsonData.payload.instance_id, msg);
 							log(`New Alert (id = ${jsonData.payload.instance_id}): \n'${event.data}'`);
-						} 
+						}
 						catch (error)
 						{
-							if (typeof error === "string") {
+							if (typeof error === "string")
+							{
 								await DEBUG_CHANNEL.send(`<@${process.env.PING_USER}>\n\`${error}\``);
-							} else if (error instanceof Error) {
+							} else if (error instanceof Error)
+							{
 								await DEBUG_CHANNEL.send(`<@${process.env.PING_USER}>\n\`${error}\`\n\`${error.stack}\``);
 							}
 							console.error("Unexpected Error parsing alert-data:");
@@ -295,8 +299,8 @@ function checkTime(): void
 	let now = new Date();
 	START_DATE.setFullYear(now.getFullYear(), now.getMonth(), now.getDate());
 	END_DATE.setFullYear(now.getFullYear(), now.getMonth(), now.getDate());
-	
-	log(`Checking at: ${now.toLocaleTimeString('de-DE')} vs ${START_DATE.toLocaleTimeString('de-DE')}-${END_DATE.toLocaleTimeString('de-DE')}`);
+
+	log(`Checking at: ${dateToLocaleTimeString(now)} vs ${dateToLocaleTimeString(START_DATE)}-${dateToLocaleTimeString(END_DATE)}`);
 	if (START_DATE <= now && now < END_DATE) // start checking ?
 	{
 		if (!isTracking)
@@ -304,7 +308,7 @@ function checkTime(): void
 			bot.user?.setPresence(STATUSES.CHECKING);
 			isTracking = true;
 			connect();
-			
+
 			let difToEnd = END_DATE.getTime() - now.getTime();
 			setTimeout(checkTime, difToEnd + 10_000); // wait until end of check-time to re-check
 		}
@@ -317,7 +321,7 @@ function checkTime(): void
 			bot.user?.setPresence(STATUSES.IDLE);
 			isTracking = false;
 		}
-		
+
 		if (ps2Socket != undefined && ps2Socket.readyState == WebSocket.OPEN && curAlerts.size == 0)
 		{
 			closeConnection();
@@ -341,16 +345,26 @@ function checkTime(): void
 bot.login(TOKEN);
 
 // HELPERS
-enum log_level {
-	info = 0, 
-	warn = 1, 
+function dateToLocaleTimeString(date: Date)
+{
+	return date.toLocaleTimeString("de-DE", { "hour12": false, "hour": "2-digit", "minute": "2-digit" })
+}
+function dateToLocaleString(date: Date)
+{
+	return date.toLocaleString("de-DE", { "month": "2-digit", "day": "2-digit", "hour12": false, "hour": "2-digit", "minute": "2-digit" })
+}
+
+enum log_level
+{
+	info = 0,
+	warn = 1,
 	error = 2
 }
 function log(msg: string, level: log_level = log_level.info): void
 {
-	let date = new Date();
-	var timestamp = `${date.toLocaleDateString('de-DE')}-${date.toLocaleTimeString('de-DE')}`
-	switch (level) {
+	var timestamp = dateToLocaleString(new Date())
+	switch (level)
+	{
 		case log_level.info:
 			console.log(`[${timestamp}] | ${msg}`);
 			break;
