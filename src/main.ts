@@ -90,24 +90,6 @@ bot.on('error', err =>
 {
 	log(err.message);
 });
-bot.on('messageCreate', msg =>
-{
-	let pro_users = ["530104861824647180", "160100096799801344"]
-	if (pro_users.includes(msg.author.id) && msg.content.toLowerCase().includes("penislantis"))
-	{
-		let ping_user_id = process.env.PING_USER || ""
-		msg.reply(
-			'Eyo, Atlantis? More like **Penislantis**, am I right?! <:HAHAHAHA:711999347474300939> <:HAHAHAHA:711999347474300939>\n'
-			+ ' :middle_finger:⠀⠀⠀⠀:smile:\n\n'
-			+ '⠀⠀:bug::zzz: :shirt: :bug:\n\n'
-			+ '⠀⠀⠀⠀⠀⠀:fuelpump: :boot:\n\n'
-			+ '⠀⠀⠀⠀⠀:zap:⠀8==:fist:====D:sweat_drops:\n\n'
-			+ '⠀⠀⠀ :guitar:⠀⠀⠀⠀:closed_umbrella:\n\n'
-			+ '⠀⠀⠀:boot:⠀⠀⠀⠀⠀:boot:\n\n'
-			+ `<@${ping_user_id}> <@${ping_user_id}> <@${ping_user_id}>`
-		);
-	}
-});
 
 function connect(): void
 {
