@@ -9,6 +9,9 @@ const myIntents: Intents = new Intents();
 myIntents.add(Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_EMOJIS_AND_STICKERS, Intents.FLAGS.GUILD_MEMBERS); // DIRECT_MESSAGES
 const bot: Client = new Client({ intents: myIntents });
 const TOKEN: string = process.env.TOKEN || "";
+if (TOKEN == "") {
+	throw new Error("Error: TOKEN in env is invalid or missing.");
+}
 
 const STATUSES: Record<string, PresenceData> = {
 	CHECKING: {
@@ -42,7 +45,10 @@ const CONTINENT_COLORS = {
 
 let CHANNEL: TextChannel;
 let DEBUG_CHANNEL: TextChannel;
-const URI: string = `wss://push.planetside2.com/streaming?environment=ps2&service-id=s:${process.env.SERVICE_ID}`;
+const URI: string = process.env.SOCKET_URL || "";
+if (URI == "") {
+	throw new Error("Error: SOCKET_URL in env is invalid or missing.");
+}
 let ps2Socket: WebSocket;
 
 interface AlertData
@@ -93,11 +99,11 @@ bot.on('error', err =>
 
 function connect(): void
 {
-	if (ps2Socket?.readyState == WebSocket.OPEN)
-	{
-		log("Warning: Tried opening non-closed connection!", log_level.warn);
-		return;
-	}
+	// if (ps2Socket?.readyState == WebSocket.OPEN)
+	// {
+	// 	log("Warning: Tried opening non-closed connection!", log_level.warn);
+	// 	return;
+	// }
 
 	let conf = process.env.REJECT_UNAUTHORIZED
 	let rejectUnauthorized = true
@@ -129,16 +135,19 @@ function connect(): void
 	ps2Socket.onerror = event =>
 	{
 		bot.user?.setPresence(STATUSES.ERROR);
-		log("Connection Error: \n" + event.error.message + "\n" + event.error.stack);
+		log("Connection Error: \n" + event.error.message + "\n" + event.error.stack, log_level.error);
 		setTimeout(checkTime, 600_000);
 	};
 
-	ps2Socket.onmessage = async (event) =>
+	ps2Socket.onmessage = async (message) =>
 	{
-		let jsonData = JSON.parse(event.data.toString());
+		let jsonData = JSON.parse(message.data.toString());
+		
 		switch (jsonData.type)
 		{
 			case "serviceMessage":
+				console.log(`New Alert`)
+
 				// Post Alert
 				if (jsonData.payload.metagame_event_state_name == "started")
 				{
@@ -148,7 +157,7 @@ function connect(): void
 						{
 							let msg = await CHANNEL.send({ embeds: [jsonToEmbed(jsonData.payload)] });
 							curAlerts.set(jsonData.payload.instance_id, msg);
-							log(`New Alert (id = ${jsonData.payload.instance_id}): \n'${event.data}'`);
+							log(`New Alert (id = ${jsonData.payload.instance_id}): \n'${message.data}'`);
 						}
 						catch (error)
 						{
@@ -173,7 +182,7 @@ function connect(): void
 						try
 						{
 							msg.edit({ embeds: [jsonToEmbed(jsonData.payload)] });
-							log(`Alert ended (id = ${jsonData.payload.instance_id}): \n'${event.data}'`);
+							log(`Alert ended (id = ${jsonData.payload.instance_id}): \n'${message.data}'`);
 
 							curAlerts.delete(jsonData.payload.instance_id);
 							if (isTracking == false && curAlerts.size == 0)
@@ -196,18 +205,18 @@ function connect(): void
 				// Ignore
 				break;
 			default:
-				log("Received: '" + event.data + "'");
+				log("Received: '" + message.data + "'");
 		}
 	};
 };
 
 function closeConnection(): void
 {
-	if (ps2Socket == undefined || ps2Socket.readyState == WebSocket.CLOSED)
-	{
-		log("Warning: Tried closing already closed connection!", log_level.warn);
-		return;
-	}
+	// if (ps2Socket == undefined || ps2Socket.readyState == WebSocket.CLOSED)
+	// {
+	// 	log("Warning: Tried closing already closed connection!", log_level.warn);
+	// 	return;
+	// }
 
 	log("Closing...")
 	ps2Socket.close();
