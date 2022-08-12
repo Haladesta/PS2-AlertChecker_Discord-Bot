@@ -347,6 +347,38 @@
         "description": "Control territory to lock Oshur",
         "name": "Oshur Conquest"
     },
+    "227": {
+        "description": "Capture Nexus!",
+        "name": "OUTFIT WARS"
+    },
+    "228": {
+        "description": "Take readings of aerial anomalies. Aircraft are free during this event.",
+        "name": "Indar Aerial Anomalies"
+    },
+    "229": {
+        "description": "Take readings of aerial anomalies. Aircraft are free during this event.",
+        "name": "Hossin Aerial Anomalies"
+    },
+    "230": {
+        "description": "Take readings of aerial anomalies. Aircraft are free during this event.",
+        "name": "Amerish Aerial Anomalies"
+    },
+    "231": {
+        "description": "Take readings of aerial anomalies. Aircraft are free during this event.",
+        "name": "Esamir Aerial Anomalies"
+    },
+    "232": {
+        "description": "Take readings of aerial anomalies. Aircraft are free during this event.",
+        "name": "Oshur Aerial Anomalies"
+    },
+    "233": {
+        "description": "Kill as many enemies as possible",
+        "name": "Maximum Pressure"
+    },
+    "234": {
+        "description": "Prepare for the Outfit War!",
+        "name": "OUTFIT WARS (pre-match)"
+    },
     "3": {
         "description": "Capture Amerish within the time limit",
         "name": "Seeing Green"
