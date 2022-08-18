@@ -4,9 +4,9 @@ require('dotenv').config();
 import alertTypes from './alerts.json';
 import { WebSocket, ClientOptions } from 'ws';
 
-import { Channel, Client, Intents, Message, MessageEmbed, PresenceData, TextChannel, ColorResolvable, HexColorString } from 'discord.js';
-const myIntents: Intents = new Intents();
-myIntents.add(Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_EMOJIS_AND_STICKERS, Intents.FLAGS.GUILD_MEMBERS); // DIRECT_MESSAGES
+import { Channel, Client, IntentsBitField, Message, EmbedBuilder, PresenceData, TextChannel, ColorResolvable, HexColorString } from 'discord.js';
+const myIntents = new IntentsBitField();
+myIntents.add(IntentsBitField.Flags.GuildMessages, IntentsBitField.Flags.GuildEmojisAndStickers, IntentsBitField.Flags.GuildMembers); // DIRECT_MESSAGES
 const bot: Client = new Client({ intents: myIntents });
 const TOKEN: string = process.env.TOKEN || "";
 if (TOKEN == "") {
@@ -116,6 +116,8 @@ function connect(): void
 	ps2Socket.onopen = (event) =>
 	{
 		log('Client Connected');
+		bot.user?.setPresence(STATUSES.CHECKING);
+		isTracking = true
 
 		let subscribeObj = {
 			"service": "event",
@@ -129,11 +131,13 @@ function connect(): void
 
 	ps2Socket.onclose = event =>
 	{
+		isTracking = false
 		log('Connection Closed');
 	};
 
 	ps2Socket.onerror = event =>
 	{
+		isTracking = false
 		bot.user?.setPresence(STATUSES.ERROR);
 		log("Connection Error: \n" + event.error.message + "\n" + event.error.stack, log_level.error);
 		setTimeout(checkTime, 600_000);
@@ -187,7 +191,7 @@ function connect(): void
 							curAlerts.delete(jsonData.payload.instance_id);
 							if (isTracking == false && curAlerts.size == 0)
 							{
-								setTimeout(closeConnection, 1_000);
+								setTimeout(closeConnection, 500);
 							}
 						}
 						catch (error) { /* If message was deleted -> do nothing */ }
@@ -219,6 +223,7 @@ function closeConnection(): void
 	// }
 
 	log("Closing...")
+	isTracking = false
 	ps2Socket.close();
 	setTimeout(() =>
 	{
@@ -226,12 +231,13 @@ function closeConnection(): void
 		{
 			ps2Socket.terminate();
 		}
-	}, 10_000);
+	}, 5_000);
 };
 
-function jsonToEmbed(alert: AlertData): MessageEmbed
+function jsonToEmbed(alert: AlertData): EmbedBuilder
 {
 	let alertType = alertTypes[alert.metagame_event_id]; // read from json
+	
 	let startTimeStamp;
 	let endTimeStamp;
 	if (alert.metagame_event_state_name == "started")
@@ -245,11 +251,11 @@ function jsonToEmbed(alert: AlertData): MessageEmbed
 		endTimeStamp = alert.timestamp;
 	}
 
-	let alertEmbed = new MessageEmbed()
+	let alertEmbed = new EmbedBuilder()
 		.setThumbnail('https://emoji.gg/assets/emoji/2891_RedAlert.gif')
 		.setTitle(alertType.name)
 		//.addField("Details:", `[${alertType.description}](https://ps2alerts.com/alert/${alert.world_id}-${alert.instance_id})`)
-		.addField("Timeframe", `<t:${startTimeStamp}:t> — <t:${endTimeStamp}:t>`)
+		.addFields({name: "Timeframe", value: `<t:${startTimeStamp}:t> — <t:${endTimeStamp}:t>`});
 		//.addField("Activity Level", popLevel, true)
 		//.addField('Territory Control',
 		//	 `<:VS:793952227558424586> **VS**: ${scores[0]}%\
@@ -268,15 +274,15 @@ function jsonToEmbed(alert: AlertData): MessageEmbed
 		switch (indexOfMax(scores))
 		{
 			case 0:
-				alertEmbed.addField("Winner", `<:VS:793952227558424586> Vanu Sovereignty`);
+				alertEmbed.addFields({name: "Winner", value: `<:VS:793952227558424586> Vanu Sovereignty`});
 				alertEmbed.setColor('#8A2BE2');
 				break;
 			case 1:
-				alertEmbed.addField("Winner", `<:NC:793952194863956018> New Conglomerate`);
+				alertEmbed.addFields({name: "Winner", value: `<:NC:793952194863956018> New Conglomerate`});
 				alertEmbed.setColor('#4169E1');
 				break;
 			case 2:
-				alertEmbed.addField("Winner", `<:TR:793952210752241665> Terran Republic`);
+				alertEmbed.addFields({name: "Winner", value: `<:TR:793952210752241665> Terran Republic`});
 				alertEmbed.setColor('#FF0000');
 				break;
 		};
@@ -296,8 +302,6 @@ function checkTime(): void
 	{
 		if (!isTracking)
 		{
-			bot.user?.setPresence(STATUSES.CHECKING);
-			isTracking = true;
 			connect();
 
 			let difToEnd = END_DATE.getTime() - now.getTime();
@@ -313,19 +317,19 @@ function checkTime(): void
 			isTracking = false;
 		}
 
-		if (ps2Socket != undefined && ps2Socket.readyState == WebSocket.OPEN && curAlerts.size == 0)
+		if (ps2Socket != undefined && ps2Socket.readyState <= WebSocket.OPEN && curAlerts.size == 0)
 		{
 			closeConnection();
 		}
 
 		let difToStart = START_DATE.getTime() - now.getTime(); // difference now to start time
 		if (difToStart < 0 || difToStart > 7_200_000)
-		{
+		{ // more than 2h until checking
 			log("Wait 2h");
 			setTimeout(checkTime, 7_200_000);
 		}
 		else
-		{
+		{ // less than 2h until checking
 			log(`Wait ${Math.floor(difToStart / 60_000)}mins`);
 			setTimeout(checkTime, difToStart + 10_000); // (dif < 2h) -> wait dif + small margin of error
 		}

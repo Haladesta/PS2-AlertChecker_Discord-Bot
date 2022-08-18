@@ -19,7 +19,7 @@
 	},
 	"homepage": "https://github.com/Haladesta/PS2-AlertChecker_Discord-Bot#readme",
 	"dependencies": {
-		"discord.js": "^13.8.1",
+		"discord.js": "^14.2.0",
 		"dotenv": "^10.0.0",
 		"fs": "^0.0.1-security",
 		"got": "^11.8.5",
