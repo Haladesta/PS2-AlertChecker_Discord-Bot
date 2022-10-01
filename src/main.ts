@@ -31,7 +31,8 @@ const CONTINENTS = {
 	6: "Amerish",
 	8: "Esamir",
 	14: "Koltyr",
-	344: "Oshur"
+	344: "Oshur",
+	131082: "Outfit Wars"
 };
 
 const CONTINENT_COLORS = {
@@ -150,8 +151,6 @@ function connect(): void
 		switch (jsonData.type)
 		{
 			case "serviceMessage":
-				console.log(`New Alert`)
-
 				// Post Alert
 				if (jsonData.payload.metagame_event_state_name == "started")
 				{
