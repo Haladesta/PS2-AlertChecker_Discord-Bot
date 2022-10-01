@@ -41,7 +41,8 @@ const CONTINENT_COLORS = {
 	6: '#59e632' as HexColorString,
 	8: '#cbd5e1' as HexColorString,
 	14: '#454545' as HexColorString,
-	344: '#168cfa' as HexColorString
+	344: '#168cfa' as HexColorString,
+	131082: '#e21f26' as HexColorString
 }
 
 let CHANNEL: TextChannel;
