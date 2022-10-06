@@ -5,6 +5,7 @@ import alertTypes from './alerts.json';
 import { WebSocket, ClientOptions } from 'ws';
 
 import { Channel, Client, IntentsBitField, Message, EmbedBuilder, PresenceData, TextChannel, ColorResolvable, HexColorString } from 'discord.js';
+import { type } from 'os';
 const myIntents = new IntentsBitField();
 myIntents.add(IntentsBitField.Flags.GuildMessages, IntentsBitField.Flags.GuildEmojisAndStickers, IntentsBitField.Flags.GuildMembers); // DIRECT_MESSAGES
 const bot: Client = new Client({ intents: myIntents });
@@ -31,8 +32,7 @@ const CONTINENTS = {
 	6: "Amerish",
 	8: "Esamir",
 	14: "Koltyr",
-	344: "Oshur",
-	131082: "Outfit Wars"
+	344: "Oshur"
 };
 
 const CONTINENT_COLORS = {
@@ -41,8 +41,7 @@ const CONTINENT_COLORS = {
 	6: '#59e632' as HexColorString,
 	8: '#cbd5e1' as HexColorString,
 	14: '#454545' as HexColorString,
-	344: '#168cfa' as HexColorString,
-	131082: '#e21f26' as HexColorString
+	344: '#168cfa' as HexColorString
 }
 
 let CHANNEL: TextChannel;
@@ -66,7 +65,7 @@ interface AlertData
 	metagame_event_state_name: "ended" | "started",
 	timestamp: string,
 	world_id: string,
-	zone_id: keyof typeof CONTINENTS
+	zone_id: string
 }
 interface PS2EventMessage
 {
@@ -254,19 +253,13 @@ function jsonToEmbed(alert: AlertData): EmbedBuilder
 	let alertEmbed = new EmbedBuilder()
 		.setThumbnail('https://emoji.gg/assets/emoji/2891_RedAlert.gif')
 		.setTitle(alertType.name)
-		//.addField("Details:", `[${alertType.description}](https://ps2alerts.com/alert/${alert.world_id}-${alert.instance_id})`)
 		.addFields({name: "Timeframe", value: `<t:${startTimeStamp}:t> — <t:${endTimeStamp}:t>`});
-		//.addField("Activity Level", popLevel, true)
-		//.addField('Territory Control',
-		//	 `<:VS:793952227558424586> **VS**: ${scores[0]}%\
-		//	\n<:NC:793952194863956018> **NC**: ${scores[1]}%\
-		//	\n<:TR:793952210752241665> **TR**: ${scores[2]}%`)
-		//.setTimestamp()
-		;
 
 	if (alert.metagame_event_state_name == "started")
 	{
-		alertEmbed.setColor(CONTINENT_COLORS[alert.zone_id]);
+		if (alert.zone_id in CONTINENTS) {
+			alertEmbed.setColor(CONTINENT_COLORS[+alert.zone_id as keyof typeof CONTINENTS]);
+		}
 	}
 	else
 	{
