@@ -5,7 +5,6 @@ import alertTypes from './alerts.json';
 import { WebSocket, ClientOptions } from 'ws';
 
 import { Channel, Client, IntentsBitField, Message, EmbedBuilder, PresenceData, TextChannel, ColorResolvable, HexColorString } from 'discord.js';
-import { type } from 'os';
 const myIntents = new IntentsBitField();
 myIntents.add(IntentsBitField.Flags.GuildMessages, IntentsBitField.Flags.GuildEmojisAndStickers, IntentsBitField.Flags.GuildMembers); // DIRECT_MESSAGES
 const bot: Client = new Client({ intents: myIntents });
@@ -235,7 +234,15 @@ function closeConnection(): void
 
 function jsonToEmbed(alert: AlertData): EmbedBuilder
 {
-	let alertType = alertTypes[alert.metagame_event_id]; // read from json
+	let alertType
+	let event_id = alert.metagame_event_id
+	if (event_id == undefined) {
+		alertType = alertTypes[event_id]; // read from json
+	} else {
+		alertType = {
+			name: "Alert"
+		}
+	}
 	
 	let startTimeStamp;
 	let endTimeStamp;
