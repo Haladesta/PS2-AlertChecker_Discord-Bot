@@ -1,6 +1,6 @@
 
 export function dateToLocaleTimeString(date: Date) {
-    return date.toLocaleTimeString("de-DE", {"hour12": false, "hour": "2-digit", "minute": "2-digit"})
+    return date.toLocaleTimeString("de-DE", {"hour12": false, "hour": "2-digit", "minute": "2-digit"});
 }
 
 export function dateToLocaleString(date: Date) {

@@ -4,10 +4,12 @@ import {WebSocket} from 'ws';
 
 import {dateToLocaleTimeString, indexOfMax, log, log_level} from "./helpers";
 import alertTypes from './static/alerts.json';
-import {AlertData, CONTINENTS, STATUSES, WORLDS} from './data';
+import {AlertData, CONTINENTS, PS2EventMessage, STATUSES, WORLDS} from './data';
 
 // =========  Init Discord  =========
 import {Client, EmbedBuilder, IntentsBitField, Message, TextChannel} from 'discord.js';
+// =========  Env  =========
+import {CHANNEL_ID, DEBUG_CHANNEL_ID, REJECT_UNAUTHORIZED, TOKEN, URI} from './environment_vars';
 
 const myIntents = new IntentsBitField();
 myIntents.add(
@@ -16,9 +18,6 @@ myIntents.add(
     IntentsBitField.Flags.GuildMembers
 );
 const bot: Client = new Client({intents: myIntents});
-
-// =========  Env  =========
-import {REJECT_UNAUTHORIZED, TOKEN, URI, CHANNEL_ID, DEBUG_CHANNEL_ID} from './environment_vars'
 
 // =========  Globals  =========
 let CHANNEL: TextChannel;
@@ -56,7 +55,7 @@ function connect(): void {
     ps2Socket.onopen = (_) => {
         log('Client Connected');
         bot.user?.setPresence(STATUSES.CHECKING);
-        isTracking = true
+        isTracking = true;
 
         let subscribe_msg = {
             "service": "event",
@@ -69,19 +68,19 @@ function connect(): void {
     };
 
     ps2Socket.onclose = _ => {
-        isTracking = false
+        isTracking = false;
         log('Connection Closed');
     };
 
     ps2Socket.onerror = event => {
-        isTracking = false
+        isTracking = false;
         bot.user?.setPresence(STATUSES.ERROR);
         log("Connection Error: \n" + event.error.message + "\n" + event.error.stack, log_level.error);
         setTimeout(checkTime, 600_000);
     };
 
     ps2Socket.onmessage = async (message) => {
-        let jsonData = JSON.parse(message.data.toString());
+        let jsonData: PS2EventMessage = JSON.parse(message.data.toString());
 
         switch (jsonData.type) {
             case "serviceMessage":
@@ -125,7 +124,18 @@ function connect(): void {
                 // Connected
                 break;
             case "heartbeat":
-                // Ignore
+                // Check for unclosed events
+                if (!isTracking && curAlerts.size != 0) {
+                    let cutoff_time = structuredClone(END_DATE);
+                    cutoff_time.setHours(END_DATE.getHours() + 1);
+                    cutoff_time.setMinutes(END_DATE.getMinutes() + 35);
+                    let now = getCurrentTimeAndRefreshConsts();
+                    if (now >= cutoff_time) {
+                        curAlerts.clear();
+                        setTimeout(closeConnection, 500);
+                        return;
+                    }
+                }
                 break;
             default:
                 log("Received: '" + message.data + "'");
@@ -134,8 +144,8 @@ function connect(): void {
 }
 
 function closeConnection(): void {
-    log("Closing...")
-    isTracking = false
+    log("Closing...");
+    isTracking = false;
     ps2Socket.close();
     setTimeout(() => {
         if (ps2Socket.readyState != WebSocket.CLOSED) // hard close
@@ -146,12 +156,12 @@ function closeConnection(): void {
 }
 
 function jsonToEmbed(alert: AlertData): EmbedBuilder {
-    let alertType
-    let event_id = alert.metagame_event_id
+    let alertType;
+    let event_id = alert.metagame_event_id;
     if (event_id == undefined) {
         alertType = {
             name: "Alert"
-        }
+        };
     } else {
         alertType = alertTypes[event_id]; // read from json
     }
@@ -197,9 +207,7 @@ function jsonToEmbed(alert: AlertData): EmbedBuilder {
 }
 
 function checkTime(): void {
-    let now = new Date();
-    START_DATE.setFullYear(now.getFullYear(), now.getMonth(), now.getDate());
-    END_DATE.setFullYear(now.getFullYear(), now.getMonth(), now.getDate());
+    let now = getCurrentTimeAndRefreshConsts();
 
     log(`Checking at: ${dateToLocaleTimeString(now)} vs ${dateToLocaleTimeString(START_DATE)}-${dateToLocaleTimeString(END_DATE)}`);
     if (START_DATE <= now && now < END_DATE) // start checking ?
@@ -209,8 +217,7 @@ function checkTime(): void {
 
             let difToEnd = END_DATE.getTime() - now.getTime();
             setTimeout(checkTime, difToEnd + 10_000); // wait until end of check-time to re-check
-        } else { /* Do nothing */
-        }
+        } else { /* Do nothing */ }
     } else {
         if (isTracking) {
             bot.user?.setPresence(STATUSES.IDLE);
@@ -232,6 +239,14 @@ function checkTime(): void {
     }
 }
 
+function getCurrentTimeAndRefreshConsts(): Date {
+    let now = new Date();
+    START_DATE.setFullYear(now.getFullYear(), now.getMonth(), now.getDate());
+    END_DATE.setFullYear(now.getFullYear(), now.getMonth(), now.getDate());
+    return now;
+}
 
 // ========= Start Bot =========
-bot.login(TOKEN).then(_ => {/* Ignore */});
+bot.login(TOKEN).then(_ => {
+    /* Ignore */
+});

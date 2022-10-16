@@ -1,3 +1,4 @@
+
 // =========  Consts  =========
 import {HexColorString, PresenceData} from "discord.js";
 import alertTypes from "./static/alerts.json";
@@ -20,7 +21,7 @@ export const WORLDS = {
     "SolTech": 40,
     "Emerald": 17,
     "Connery": 1
-}
+};
 
 export const CONTINENTS = {
     2:   {name: "Indar",   color: '#fcda2b' as HexColorString},
