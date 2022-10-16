@@ -29,7 +29,7 @@ const curAlerts: Map<string, Message> = new Map();
 
 // time in UTC
 const START_DATE = new Date();
-START_DATE.setHours(14, 59, 0, 0);
+START_DATE.setHours(17, 30, 0, 0);
 const END_DATE = new Date();
 END_DATE.setHours(22, 0, 0, 0);
 
