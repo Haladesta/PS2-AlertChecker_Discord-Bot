@@ -1,12 +1,13 @@
 'use strict';
 require('dotenv').config();
-import alertTypes from './alerts.json';
 import {WebSocket} from 'ws';
 
+import {dateToLocaleTimeString, indexOfMax, log, log_level} from "./helpers";
+import alertTypes from './static/alerts.json';
+import {AlertData, CONTINENTS, STATUSES, WORLDS} from './data';
+
 // =========  Init Discord  =========
-import {
-    Client, IntentsBitField, Message, EmbedBuilder, PresenceData, TextChannel, HexColorString
-} from 'discord.js';
+import {Client, EmbedBuilder, IntentsBitField, Message, TextChannel} from 'discord.js';
 
 const myIntents = new IntentsBitField();
 myIntents.add(
@@ -17,102 +18,27 @@ myIntents.add(
 const bot: Client = new Client({intents: myIntents});
 
 // =========  Env  =========
-const TOKEN: string = process.env.TOKEN || "";
-const URI: string = process.env.SOCKET_URL || "";
-const CHANNEL_ID: string = process.env.CHANNEL || "";
-const DEBUG_CHANNEL_ID: string = process.env.DEBUG_CHANNEL || "";
-const REJECT_UNAUTHORIZED: boolean = process.env.REJECT_UNAUTHORIZED == "true";
-
-if (TOKEN == "") {
-    throw new Error("Error: TOKEN in env is invalid or missing.");
-}
-if (URI == "") {
-    throw new Error("Error: SOCKET_URL in env is invalid or missing.");
-}
-if (CHANNEL_ID == "") {
-    throw new Error("Error: CHANNEL_ID in env is invalid or missing.");
-}
-if (DEBUG_CHANNEL_ID == "") {
-    throw new Error("Error: DEBUG_CHANNEL_ID in env is invalid or missing.");
-}
-
-// =========  Consts  =========
-const STATUSES: Record<string, PresenceData> = {
-    CHECKING: {
-        status: 'online', activities: [{name: 'Checking... 👀'}]
-    },
-    IDLE: {
-        status: 'idle', activities: [{name: 'Sleeping 💤'}]
-    },
-    ERROR: {
-        status: 'dnd', activities: [{name: 'Error: API unavailable'}]
-    }
-};
-
-const WORLDS = {
-    "Cobalt": 13,
-    "Miller": 10,
-    "SolTech": 40,
-    "Emerald": 17,
-    "Connery": 1
-}
-
-const CONTINENTS = {
-    2: "Indar",
-    4: "Hossin",
-    6: "Amerish",
-    8: "Esamir",
-    14: "Koltyr",
-    344: "Oshur"
-};
-
-const CONTINENT_COLORS = {
-    2: '#fcda2b' as HexColorString,
-    4: '#b4de2a' as HexColorString,
-    6: '#59e632' as HexColorString,
-    8: '#cbd5e1' as HexColorString,
-    14: '#454545' as HexColorString,
-    344: '#168cfa' as HexColorString
-}
-
-interface AlertData {
-    event_name: string,
-    experience_bonus: string,
-    faction_nc: string,
-    faction_tr: string,
-    faction_vs: string,
-    instance_id: string,
-    metagame_event_id: keyof typeof alertTypes,
-    metagame_event_state: string,
-    metagame_event_state_name: "ended" | "started",
-    timestamp: string,
-    world_id: string,
-    zone_id: string
-}
-
-interface PS2EventMessage {
-    payload: AlertData,
-    service: string,
-    type: string
-}
+import {REJECT_UNAUTHORIZED, TOKEN, URI, CHANNEL_ID, DEBUG_CHANNEL_ID} from './environment_vars'
 
 // =========  Globals  =========
 let CHANNEL: TextChannel;
 let DEBUG_CHANNEL: TextChannel;
 let ps2Socket: WebSocket;
+let isTracking = false;
+const curAlerts: Map<string, Message> = new Map();
 
 // time in UTC
 const START_DATE = new Date();
-START_DATE.setHours(17, 30, 0, 0);
+START_DATE.setHours(14, 59, 0, 0);
 const END_DATE = new Date();
 END_DATE.setHours(22, 0, 0, 0);
-let isTracking = false;
-
-const curAlerts: Map<string, Message<boolean>> = new Map();
 
 
 // =========  Bot Launch  =========
 bot.on('ready', async () => {
+    CHANNEL = await bot.channels.fetch(CHANNEL_ID) as TextChannel;
+    DEBUG_CHANNEL = await bot.channels.fetch(DEBUG_CHANNEL_ID) as TextChannel;
+
     log(`Logged in as ${bot.user?.tag}!`);
     bot.user?.setPresence(STATUSES.IDLE);
 
@@ -125,12 +51,6 @@ bot.on('error', err => {
 
 // =========  Functions  =========
 function connect(): void {
-    // if (ps2Socket?.readyState == WebSocket.OPEN)
-    // {
-    // 	log("Warning: Tried opening non-closed connection!", log_level.warn);
-    // 	return;
-    // }
-
     ps2Socket = new WebSocket(URI, {"rejectUnauthorized": REJECT_UNAUTHORIZED});
 
     ps2Socket.onopen = (_) => {
@@ -167,7 +87,7 @@ function connect(): void {
             case "serviceMessage":
                 // Post Alert
                 if (jsonData.payload.metagame_event_state_name == "started") {
-                    if (isTracking) {
+                    if (isTracking) { // Ignore of not tracking
                         try {
                             let msg = await CHANNEL.send({embeds: [jsonToEmbed(jsonData.payload)]});
                             curAlerts.set(jsonData.payload.instance_id, msg);
@@ -214,12 +134,6 @@ function connect(): void {
 }
 
 function closeConnection(): void {
-    // if (ps2Socket == undefined || ps2Socket.readyState == WebSocket.CLOSED)
-    // {
-    // 	log("Warning: Tried closing already closed connection!", log_level.warn);
-    // 	return;
-    // }
-
     log("Closing...")
     isTracking = false
     ps2Socket.close();
@@ -259,7 +173,7 @@ function jsonToEmbed(alert: AlertData): EmbedBuilder {
 
     if (alert.metagame_event_state_name == "started") {
         if (alert.zone_id in CONTINENTS) {
-            alertEmbed.setColor(CONTINENT_COLORS[+alert.zone_id as keyof typeof CONTINENTS]);
+            alertEmbed.setColor(CONTINENTS[+alert.zone_id as keyof typeof CONTINENTS].color);
         }
     } else {
         let scores = [+alert.faction_vs, +alert.faction_nc, +alert.faction_tr];
@@ -320,66 +234,4 @@ function checkTime(): void {
 
 
 // ========= Start Bot =========
-bot.login(TOKEN);
-
-
-// ========= HELPERS =========
-function dateToLocaleTimeString(date: Date) {
-    return date.toLocaleTimeString("de-DE", {"hour12": false, "hour": "2-digit", "minute": "2-digit"})
-}
-
-function dateToLocaleString(date: Date) {
-    return date.toLocaleString("de-DE", {
-        "month": "2-digit",
-        "day": "2-digit",
-        "hour12": false,
-        "hour": "2-digit",
-        "minute": "2-digit"
-    })
-}
-
-enum log_level {
-    info = 0,
-    warn = 1,
-    error = 2
-}
-
-function log(msg: string, level: log_level = log_level.info): void {
-    const timestamp = dateToLocaleString(new Date());
-    switch (level) {
-        case log_level.info:
-            console.log(`[${timestamp}] | ${msg}`);
-            break;
-        case log_level.warn:
-            console.warn(`[${timestamp}] | ${msg}`);
-            break;
-        case log_level.error:
-            console.error(`[${timestamp}] | ${msg}`);
-            break;
-    }
-}
-
-function indexOfMax(arr: Array<number>): number {
-    if (arr.length === 0) {
-        return -1;
-    }
-
-    let max = arr[0];
-    let maxIndex = 0;
-
-    for (let i = 1; i < arr.length; i++) {
-        if (arr[i] > max) {
-            maxIndex = i;
-            max = arr[i];
-        }
-    }
-
-    return maxIndex;
-}
-
-function leadZero(num: number): string {
-    if (num < 10)
-        return `0${num}`;
-    else
-        return `${num}`;
-}
+bot.login(TOKEN).then(_ => {/* Ignore */});
