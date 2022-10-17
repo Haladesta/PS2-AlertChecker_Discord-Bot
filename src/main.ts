@@ -84,6 +84,9 @@ function connect(): void {
 
         switch (jsonData.type) {
             case "serviceMessage":
+                if (parseInt(jsonData.payload.metagame_event_id) >= 227) {
+                    return; // Ignore special events
+                }
                 // Post Alert
                 if (jsonData.payload.metagame_event_state_name == "started") {
                     if (isTracking) { // Ignore of not tracking
