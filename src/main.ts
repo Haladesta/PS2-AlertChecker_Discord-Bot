@@ -84,26 +84,33 @@ function connect(): void {
 
         switch (jsonData.type) {
             case "serviceMessage":
-                if (parseInt(jsonData.payload.metagame_event_id) >= 227) {
+                let event_id = parseInt(jsonData.payload.metagame_event_id)
+                if (event_id >= 227 || event_id <= 106
+                    || (event_id >= 159 && event_id <= 175)
+                    || (event_id >= 180 && event_id <= 183)
+                    || (event_id >= 194 && event_id <= 207)
+                ) {
                     return; // Ignore special events
                 }
                 // Post Alert
                 if (jsonData.payload.metagame_event_state_name == "started") {
-                    if (isTracking) { // Ignore of not tracking
-                        try {
-                            let msg = await CHANNEL.send({embeds: [jsonToEmbed(jsonData.payload)]});
-                            curAlerts.set(jsonData.payload.instance_id, msg);
-                            log(`New Alert (id = ${jsonData.payload.instance_id}): \n'${message.data}'`);
-                        } catch (error) {
-                            if (typeof error === "string") {
-                                await DEBUG_CHANNEL.send(`<@${process.env.PING_USER}>\n\`${error}\``);
-                            } else if (error instanceof Error) {
-                                await DEBUG_CHANNEL.send(`<@${process.env.PING_USER}>\n\`${error}\`\n\`${error.stack}\``);
-                            }
-                            console.error("Unexpected Error parsing alert-data:");
-                            console.error(jsonData);
-                            throw error;
+                    if (!isTracking) { // Ignore of not tracking anymore
+                        return;
+                    }
+
+                    try {
+                        let msg = await CHANNEL.send({embeds: [jsonToEmbed(jsonData.payload)]});
+                        curAlerts.set(jsonData.payload.instance_id, msg);
+                        log(`New Alert (id = ${jsonData.payload.instance_id}): \n'${message.data}'`);
+                    } catch (error) {
+                        if (typeof error === "string") {
+                            await DEBUG_CHANNEL.send(`<@${process.env.PING_USER}>\n\`${error}\``);
+                        } else if (error instanceof Error) {
+                            await DEBUG_CHANNEL.send(`<@${process.env.PING_USER}>\n\`${error}\`\n\`${error.stack}\``);
                         }
+                        console.error("Unexpected Error parsing alert-data:");
+                        console.error(jsonData);
+                        throw error;
                     }
                 } else if (jsonData.payload.metagame_event_state_name == "ended") {
                     let msg = curAlerts.get(jsonData.payload.instance_id);
@@ -113,11 +120,11 @@ function connect(): void {
                             log(`Alert ended (id = ${jsonData.payload.instance_id}): \n'${message.data}'`);
 
                             curAlerts.delete(jsonData.payload.instance_id);
+                            // no longer tracking, no alerts left -> close connection
                             if (!isTracking && curAlerts.size == 0) {
                                 setTimeout(closeConnection, 500);
                             }
-                        } catch (error) { /* If message was deleted -> do nothing */
-                        }
+                        } catch (error) { /* If message was deleted -> do nothing */ }
                     } else {
                         log(`Ignored: Alert ended (id = ${jsonData.payload.instance_id})`);
                     }
@@ -151,9 +158,8 @@ function closeConnection(): void {
     isTracking = false;
     ps2Socket.close();
     setTimeout(() => {
-        if (ps2Socket.readyState != WebSocket.CLOSED) // hard close
-        {
-            ps2Socket.terminate();
+        if (ps2Socket.readyState != WebSocket.CLOSED) {
+            ps2Socket.terminate(); // hard close
         }
     }, 5_000);
 }
@@ -163,7 +169,7 @@ function jsonToEmbed(alert: AlertData): EmbedBuilder {
     let event_id = alert.metagame_event_id;
     if (event_id == undefined) {
         alertType = {
-            name: "Alert"
+            name: "Unknown Alert"
         };
     } else {
         alertType = alertTypes[event_id]; // read from json
@@ -173,9 +179,9 @@ function jsonToEmbed(alert: AlertData): EmbedBuilder {
     let endTimeStamp;
     if (alert.metagame_event_state_name == "started") {
         startTimeStamp = alert.timestamp;
-        endTimeStamp = parseInt(alert.timestamp) + 5_400;
+        endTimeStamp = parseInt(alert.timestamp) + 5_400; // started -> add 1,5h
     } else {
-        startTimeStamp = parseInt(alert.timestamp) - 5_400;
+        startTimeStamp = parseInt(alert.timestamp) - 5_400; // ended -> subtract 1,5h
         endTimeStamp = alert.timestamp;
     }
 
@@ -185,10 +191,12 @@ function jsonToEmbed(alert: AlertData): EmbedBuilder {
         .addFields({name: "Timeframe", value: `<t:${startTimeStamp}:t> — <t:${endTimeStamp}:t>`});
 
     if (alert.metagame_event_state_name == "started") {
+        // started -> use continent colors
         if (alert.zone_id in CONTINENTS) {
             alertEmbed.setColor(CONTINENTS[+alert.zone_id as keyof typeof CONTINENTS].color);
         }
     } else {
+        // ended -> use winner faction's color
         let scores = [+alert.faction_vs, +alert.faction_nc, +alert.faction_tr];
         switch (indexOfMax(scores)) {
             case 0:
@@ -213,29 +221,32 @@ function checkTime(): void {
     let now = getCurrentTimeAndRefreshConsts();
 
     log(`Checking at: ${dateToLocaleTimeString(now)} vs ${dateToLocaleTimeString(START_DATE)}-${dateToLocaleTimeString(END_DATE)}`);
-    if (START_DATE <= now && now < END_DATE) // start checking ?
-    {
+    if (START_DATE <= now && now < END_DATE) { // start checking?
         if (!isTracking) {
             connect();
 
             let difToEnd = END_DATE.getTime() - now.getTime();
             setTimeout(checkTime, difToEnd + 10_000); // wait until end of check-time to re-check
         } else { /* Do nothing */ }
-    } else {
+    } else { // Outside of checking time
         if (isTracking) {
+            // stop accepting new alerts
             bot.user?.setPresence(STATUSES.IDLE);
             isTracking = false;
         }
 
         if (ps2Socket != undefined && ps2Socket.readyState <= WebSocket.OPEN && curAlerts.size == 0) {
+            // WebSocket still open and no running alerts left -> close connection
             closeConnection();
         }
 
         let difToStart = START_DATE.getTime() - now.getTime(); // difference now to start time
-        if (difToStart < 0 || difToStart > 7_200_000) { // more than 2h until checking
+        if (difToStart < 0 || difToStart > 7_200_000) {
+            // more than 2h until checking
             log("Wait 2h");
             setTimeout(checkTime, 7_200_000);
-        } else { // less than 2h until checking
+        } else {
+            // less than 2h until checking
             log(`Wait ${Math.floor(difToStart / 60_000)}mins`);
             setTimeout(checkTime, difToStart + 10_000); // (dif < 2h) -> wait dif + small margin of error
         }
@@ -244,6 +255,7 @@ function checkTime(): void {
 
 function getCurrentTimeAndRefreshConsts(): Date {
     let now = new Date();
+    // Set to same date to allow direct comparison
     START_DATE.setFullYear(now.getFullYear(), now.getMonth(), now.getDate());
     END_DATE.setFullYear(now.getFullYear(), now.getMonth(), now.getDate());
     return now;

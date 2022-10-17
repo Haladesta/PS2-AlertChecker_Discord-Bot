@@ -3,13 +3,33 @@
         "description": "Capture Indar within the time limit",
         "name": "Feeling the Heat"
     },
+    "2": {
+        "description": "Capture Esamir within the time limit",
+        "name": "Cold War"
+    },
+    "3": {
+        "description": "Capture Amerish within the time limit",
+        "name": "Seeing Green"
+    },
+    "4": {
+        "description": "Capture Hossin within the time limit",
+        "name": "Marsh Madness"
+    },
+    "7": {
+        "description": "Capture and hold all 3 Biolabs on Amerish",
+        "name": "Dome Domination"
+    },
+    "8": {
+        "description": "Capture and hold all 3 Tech Plants on Amerish",
+        "name": "Technological Advancement"
+    },
+    "9": {
+        "description": "Capture and hold all 3 Amp Stations on Amerish",
+        "name": "Power Rush"
+    },
     "10": {
         "description": "Capture and hold all 3 Biolabs on Indar",
         "name": "Dome Domination"
-    },
-    "106": {
-        "description": "Capture bases and kill enemies to earn points.",
-        "name": "Conquest"
     },
     "11": {
         "description": "Capture and hold all 3 Tech Plants on Indar",
@@ -18,6 +38,30 @@
     "12": {
         "description": "Capture and hold all 3 Amp Stations on Indar",
         "name": "Power Rush"
+    },
+    "13": {
+        "description": "Capture and hold all 3 Biolabs on Esamir",
+        "name": "Dome Domination"
+    },
+    "14": {
+        "description": "Capture and hold all 3 Amp Stations on Esamir",
+        "name": "Power Rush"
+    },
+    "16": {
+        "description": "Capture and hold all 3 Biolabs on Hossin",
+        "name": "Dome Domination"
+    },
+    "17": {
+        "description": "Capture and hold all 3 Tech Plants on Hossin",
+        "name": "Technological Advancement"
+    },
+    "18": {
+        "description": "Capture and hold all 3 Amp Stations on Hossin",
+        "name": "Power Rush"
+    },
+    "106": {
+        "description": "Capture bases and kill enemies to earn points.",
+        "name": "Conquest"
     },
     "123": {
         "description": "Control territory to lock Indar",
@@ -47,10 +91,6 @@
         "description": "Control territory to lock Hossin",
         "name": "Hossin Superiority"
     },
-    "13": {
-        "description": "Capture and hold all 3 Biolabs on Esamir",
-        "name": "Dome Domination"
-    },
     "130": {
         "description": "Control territory to lock Hossin",
         "name": "Hossin Enlightenment"
@@ -70,10 +110,6 @@
     "134": {
         "description": "Control territory to lock Amerish",
         "name": "Amerish Liberation"
-    },
-    "14": {
-        "description": "Capture and hold all 3 Amp Stations on Esamir",
-        "name": "Power Rush"
     },
     "147": {
         "description": "Control territory to lock Indar",
@@ -127,10 +163,6 @@
         "description": "Additional territories are coming back online.",
         "name": "Amerish Warpgates Stabilizing"
     },
-    "16": {
-        "description": "Capture and hold all 3 Biolabs on Hossin",
-        "name": "Dome Domination"
-    },
     "160": {
         "description": "Additional territories are coming back online.",
         "name": "Esamir Warpgates Stabilizing"
@@ -154,10 +186,6 @@
     "168": {
         "description": "Gather Tempest from the meteor site and return it to your Warpgate.",
         "name": "Eye of the Storm"
-    },
-    "17": {
-        "description": "Capture and hold all 3 Tech Plants on Hossin",
-        "name": "Technological Advancement"
     },
     "170": {
         "description": "A deadly meteor shower is wreaking havoc across the continent.",
@@ -194,10 +222,6 @@
     "179": {
         "description": "Control territory to lock Indar",
         "name": "Indar Unstable Meltdown"
-    },
-    "18": {
-        "description": "Capture and hold all 3 Amp Stations on Hossin",
-        "name": "Power Rush"
     },
     "180": {
         "description": "Capture and hold the most Large Outposts",
@@ -270,10 +294,6 @@
     "199": {
         "description": "Kill as many enemies as possible",
         "name": "Maximum Pressure"
-    },
-    "2": {
-        "description": "Capture Esamir within the time limit",
-        "name": "Cold War"
     },
     "200": {
         "description": "Kill as many enemies as possible",
@@ -414,25 +434,5 @@
     "245": {
         "description": "Destroy the ghost ship",
         "name": "Esamir Forgotten Fleet Carrier"
-    },
-    "3": {
-        "description": "Capture Amerish within the time limit",
-        "name": "Seeing Green"
-    },
-    "4": {
-        "description": "Capture Hossin within the time limit",
-        "name": "Marsh Madness"
-    },
-    "7": {
-        "description": "Capture and hold all 3 Biolabs on Amerish",
-        "name": "Dome Domination"
-    },
-    "8": {
-        "description": "Capture and hold all 3 Tech Plants on Amerish",
-        "name": "Technological Advancement"
-    },
-    "9": {
-        "description": "Capture and hold all 3 Amp Stations on Amerish",
-        "name": "Power Rush"
     }
 }
