@@ -54,7 +54,6 @@ function connect(): void {
 
     ps2Socket.onopen = (_) => {
         log('Client Connected');
-        bot.user?.setPresence(STATUSES.CHECKING);
         isTracking = true;
 
         let subscribe_msg = {
@@ -222,6 +221,7 @@ function checkTime(): void {
 
     log(`Checking at: ${dateToLocaleTimeString(now)} vs ${dateToLocaleTimeString(START_DATE)}-${dateToLocaleTimeString(END_DATE)}`);
     if (START_DATE <= now && now < END_DATE) { // start checking?
+        bot.user?.setPresence(STATUSES.CHECKING); // Always set Status because it keeps resetting
         if (!isTracking) {
             connect();
 
@@ -229,9 +229,10 @@ function checkTime(): void {
             setTimeout(checkTime, difToEnd + 10_000); // wait until end of check-time to re-check
         } else { /* Do nothing */ }
     } else { // Outside of checking time
+        bot.user?.setPresence(STATUSES.IDLE); // Always set Status because it keeps resetting
+
         if (isTracking) {
             // stop accepting new alerts
-            bot.user?.setPresence(STATUSES.IDLE);
             isTracking = false;
         }
 
